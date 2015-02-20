@@ -12,7 +12,7 @@ OUT_OBJ_PATH=obj
 TOOLCHAIN_PREFIX=arm-none-eabi-
 CC=$(TOOLCHAIN_PREFIX)gcc
 CXX=$(TOOLCHAIN_PREFIX)g++
-AR=$(TOOLCHAIN_PREFIX)ar
+AR=$(TOOLCHAIN_PREFIX)gcc-ar
 
 # Additional include dirs and libs. libsccc will be added automatically
 ALL_INC_PATHS=$(INC_PATH) $(SRC_PATH)
@@ -39,6 +39,14 @@ $(error Require GNU Make 3.81 or newer)
 
 else
 $(info Make version = $(MAKE_VERSION))
+
+endif
+
+ifdef WIN32
+# TODO Also print CC version on win32
+
+else ifdef UNIX
+$(info CC = $(shell $(CC) --version | (read -r line; echo $$line)))
 
 endif
 
