@@ -48,7 +48,6 @@ void Launcher::Run()
 		lcd.Clear(0);
 
 		LcdMenu menu(&lcd);
-		// The sequence here is important as id == position
 		//menu.AddItem(NORMAL_ID, "Normal");
 		menu.AddItem(CAMERA_TEST_ID, "Camera Test");
 		menu.Select(0);
