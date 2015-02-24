@@ -8,7 +8,10 @@
 
 #include <libbase/k60/mcg.h>
 
-#include "app.h"
+#include <libsc/lib_guard.h>
+#include <libsc/k60/system.h>
+
+#include "launcher.h"
 
 using namespace camera;
 
@@ -30,7 +33,11 @@ Mcg::Config Mcg::GetMcgConfig()
 
 int main()
 {
-	App app;
-	app.Run();
+	LIBSC_GUARD();
+
+	libsc::k60::System::Init();
+
+	Launcher launcher;
+	launcher.Run();
 	return 0;
 }
