@@ -9,6 +9,7 @@
 #include <functional>
 
 #include <libsc/k60/button.h>
+#include <libsc/k60/joystick.h>
 #include <libsc/k60/led.h>
 #include <libsc/k60/st7735r.h>
 #include <libutil/looper.h>
@@ -52,7 +53,23 @@ void Launcher::Run()
 		menu.AddItem(CAMERA_TEST_ID, "Camera Test");
 		menu.Select(0);
 
-		// TODO Joystick to select between items
+		Joystick::Config js_config;
+		js_config.id = 0;
+		js_config.is_active_low = true;
+		js_config.listeners[static_cast<int>(Joystick::State::kDown)] =
+				[&](const uint8_t)
+				{
+					menu.Select(menu.GetSelectedPosition() + 1);
+				};
+		js_config.listener_triggers[static_cast<int>(Joystick::State::kDown)] =
+				Joystick::Config::Trigger::kDown;
+		js_config.listeners[static_cast<int>(Joystick::State::kUp)] =
+				[&](const uint8_t)
+				{
+					menu.Select(static_cast<int>(menu.GetSelectedPosition()) - 1);
+				};
+		js_config.listener_triggers[static_cast<int>(Joystick::State::kUp)] =
+				Joystick::Config::Trigger::kDown;
 
 		Button::Config ok_btn_config;
 		ok_btn_config.id = 0;
