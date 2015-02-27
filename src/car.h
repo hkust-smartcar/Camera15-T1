@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include <libsc/k60/ab_encoder.h>
 #include <libsc/k60/button.h>
 #include <libsc/k60/dir_motor.h>
@@ -71,6 +73,27 @@ public:
 	{
 		return m_uart;
 	}
+
+	/**
+	 * Set interrupt for the button, effectively it will reinit the button. Only
+	 * libsc::k60::Button::Config::listener and
+	 * libsc::k60::Button::Config::listener_trigger are considered. If @a config
+	 * is nullptr, it'll disable the interrupt
+	 *
+	 * @param id
+	 * @param config
+	 */
+	void SetButtonIsr(const uint8_t id, const libsc::k60::Button::Config *config);
+
+	/**
+	 * Set interrupt for the joystick, effectively it will reinit the joystick.
+	 * Only libsc::k60::Joystick::Config::listeners and
+	 * libsc::k60::Joystick::Config::listener_triggers are considered. If
+	 * @a config is nullptr, it'll disable the interrupt
+	 *
+	 * @param config
+	 */
+	void SetJoystickIsr(const libsc::k60::Joystick::Config *config);
 
 	static constexpr int GetCameraW()
 	{

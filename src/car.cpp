@@ -122,4 +122,31 @@ Car::Car()
 Car::~Car()
 {}
 
+void Car::SetButtonIsr(const uint8_t id, const Button::Config *config)
+{
+	auto btn_config = GetButtonConfig(id);
+	if (config)
+	{
+		btn_config.listener = config->listener;
+		btn_config.listener_trigger = config->listener_trigger;
+	}
+	m_buttons[id] = Button(nullptr);
+	m_buttons[id] = Button(btn_config);
+}
+
+void Car::SetJoystickIsr(const Joystick::Config *config)
+{
+	auto js_config = GetJoystickConfig();
+	if (config)
+	{
+		for (int i = 0; i < 5; ++i)
+		{
+			js_config.listeners[i] = config->listeners[i];
+			js_config.listener_triggers[i] = config->listener_triggers[i];
+		}
+	}
+	m_joystick = Joystick(nullptr);
+	m_joystick = Joystick(js_config);
+}
+
 }
