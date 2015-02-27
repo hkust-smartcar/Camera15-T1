@@ -8,6 +8,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <memory>
 
 #include <libsc/k60/led.h>
 #include <libsc/k60/ov7725.h>
@@ -21,6 +22,7 @@
 #include "system_res.h"
 
 using namespace libsc::k60;
+using namespace std;
 
 namespace camera
 {
@@ -33,19 +35,19 @@ void CameraTestApp::Run()
 	car->GetLcd().Clear(libutil::GetRgb565(0x33, 0xB5, 0xE5));
 
 	const Uint image_size = car->GetCameraW() * car->GetCameraH() / 8;
-	Byte *image2 = new Byte[image_size];
+	unique_ptr<Byte[]> image2(new Byte[image_size]);
 	car->GetCamera().Start();
 
 	int led_time = 0;
-	while (true)
+	while (!car->GetButton(1).IsDown())
 	{
 		if (car->GetCamera().IsAvailable())
 		{
-			memcpy(image2, car->GetCamera().LockBuffer(), image_size);
+			memcpy(image2.get(), car->GetCamera().LockBuffer(), image_size);
 			car->GetCamera().UnlockBuffer();
 
 			car->GetLcd().SetRegion({0, 0, car->GetCameraW(), car->GetCameraH()});
-			car->GetLcd().FillBits(0, 0xFFFF, image2,
+			car->GetLcd().FillBits(0, 0xFFFF, image2.get(),
 					car->GetCameraW() * car->GetCameraH());
 		}
 
