@@ -27,6 +27,16 @@ public:
 	Car();
 	~Car();
 
+	static constexpr int GetCameraW()
+	{
+		return 80;
+	}
+
+	static constexpr int GetCameraH()
+	{
+		return 60;
+	}
+
 private:
 	libsc::k60::Button m_buttons[2];
 	libsc::k60::Ov7725 m_camera;

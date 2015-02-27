@@ -45,8 +45,8 @@ Button::Config GetButtonConfig(const uint8_t id)
 Ov7725::Config GetOv7725Config()
 {
 	Ov7725::Config product;
-	product.w = 80;
-	product.h = 60;
+	product.w = Car::GetCameraW();
+	product.h = Car::GetCameraH();
 	product.fps = Ov7725::Config::Fps::kLow;
 	return product;
 }
