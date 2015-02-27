@@ -24,7 +24,7 @@ Mcg::Config Mcg::GetMcgConfig()
 {
 	Mcg::Config config;
 	config.external_oscillator_khz = 50000;
-	config.core_clock_khz = 150000;
+	//config.core_clock_khz = 150000;
 	return config;
 }
 
