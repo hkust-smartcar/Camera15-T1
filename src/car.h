@@ -27,6 +27,51 @@ public:
 	Car();
 	~Car();
 
+	libsc::k60::Button& GetButton(const uint8_t id)
+	{
+		return m_buttons[id];
+	}
+
+	libsc::k60::Ov7725& GetCamera()
+	{
+		return m_camera;
+	}
+
+	libsc::k60::AbEncoder& GetEncoder(const uint8_t id)
+	{
+		return m_encoders[id];
+	}
+
+	libsc::k60::Joystick& GetJoystick()
+	{
+		return m_joystick;
+	}
+
+	libsc::k60::St7735r& GetLcd()
+	{
+		return m_lcd;
+	}
+
+	libsc::k60::Led& GetLed(const uint8_t id)
+	{
+		return m_leds[id];
+	}
+
+	libsc::k60::DirMotor& GetMotor(const uint8_t id)
+	{
+		return m_motors[id];
+	}
+
+	libsc::k60::FutabaS3010& GetServo()
+	{
+		return m_servo;
+	}
+
+	libsc::k60::JyMcuBt106& GetUart()
+	{
+		return m_uart;
+	}
+
 	static constexpr int GetCameraW()
 	{
 		return 80;
