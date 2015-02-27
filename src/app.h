@@ -11,13 +11,33 @@
 namespace camera
 {
 
+struct SystemRes;
+
+}
+
+namespace camera
+{
+
 class App
 {
 public:
+	explicit App(SystemRes *res)
+			: m_res(res)
+	{}
+
 	virtual ~App()
 	{}
 
 	virtual void Run() = 0;
+
+protected:
+	SystemRes* GetSystemRes()
+	{
+		return m_res;
+	}
+
+private:
+	SystemRes *m_res;
 };
 
 }

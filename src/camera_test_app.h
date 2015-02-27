@@ -16,6 +16,10 @@ namespace camera
 class CameraTestApp : public App
 {
 public:
+	explicit CameraTestApp(SystemRes *res)
+			: App(res)
+	{}
+
 	void Run() override;
 };
 
