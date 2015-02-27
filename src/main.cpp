@@ -11,7 +11,9 @@
 #include <libsc/lib_guard.h>
 #include <libsc/k60/system.h>
 
+#include "car.h"
 #include "launcher.h"
+#include "system_res.h"
 
 using namespace camera;
 
@@ -37,7 +39,11 @@ int main()
 
 	libsc::k60::System::Init();
 
-	Launcher launcher(nullptr);
+	Car car;
+	SystemRes res;
+	res.car = &car;
+
+	Launcher launcher(&res);
 	launcher.Run();
 	return 0;
 }
