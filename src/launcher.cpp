@@ -97,7 +97,7 @@ void Launcher::StartApp(const int id)
 
 	case CAMERA_TEST_ID:
 		{
-			CameraTestApp app(nullptr);
+			CameraTestApp app(GetSystemRes());
 			app.Run();
 		}
 		break;

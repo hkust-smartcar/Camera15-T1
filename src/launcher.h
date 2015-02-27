@@ -8,12 +8,18 @@
 
 #pragma once
 
+#include "app.h"
+
 namespace camera
 {
 
-class Launcher
+class Launcher : public App
 {
 public:
+	explicit Launcher(SystemRes *res)
+			: App(res)
+	{}
+
 	void Run();
 
 private:

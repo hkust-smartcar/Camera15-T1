@@ -37,7 +37,7 @@ int main()
 
 	libsc::k60::System::Init();
 
-	Launcher launcher;
+	Launcher launcher(nullptr);
 	launcher.Run();
 	return 0;
 }
