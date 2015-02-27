@@ -15,8 +15,10 @@
 #include <libutil/looper.h>
 
 #include "camera_test_app.h"
+#include "car.h"
 #include "launcher.h"
 #include "lcd_menu.h"
+#include "system_res.h"
 
 using namespace libsc::k60;
 using namespace libutil;
@@ -32,30 +34,25 @@ void Launcher::Run()
 	Uint run_app_id = 0;
 	// Peripherals can't be reinited, so we have to kill them after use here
 	{
+		Car *car = GetSystemRes()->car;
 		Looper looper;
 
-		Led leds[] = {Led({0}), Led({1}), Led({2}), Led({3})};
 		std::function<void(const Timer::TimerInt, const Timer::TimerInt)> blink =
 				[&](const Timer::TimerInt request, const Timer::TimerInt)
 				{
-					leds[0].Switch();
+					car->GetLed(0).Switch();
 					looper.RunAfter(request, blink);
 				};
 		looper.RunAfter(200, blink);
 
-		St7735r::Config lcd_config;
-		lcd_config.is_revert = true;
-		St7735r lcd(lcd_config);
-		lcd.Clear(0);
+		car->GetLcd().Clear(0);
 
-		LcdMenu menu(&lcd);
+		LcdMenu menu(&car->GetLcd());
 		//menu.AddItem(NORMAL_ID, "Normal");
 		menu.AddItem(CAMERA_TEST_ID, "Camera Test");
 		menu.Select(0);
 
 		Joystick::Config js_config;
-		js_config.id = 0;
-		js_config.is_active_low = true;
 		js_config.listeners[static_cast<int>(Joystick::State::kDown)] =
 				[&](const uint8_t)
 				{
@@ -70,20 +67,20 @@ void Launcher::Run()
 				};
 		js_config.listener_triggers[static_cast<int>(Joystick::State::kUp)] =
 				Joystick::Config::Trigger::kDown;
+		car->SetJoystickIsr(&js_config);
 
 		Button::Config ok_btn_config;
-		ok_btn_config.id = 0;
-		ok_btn_config.is_active_low = true;
-		ok_btn_config.is_use_pull_resistor = true;
 		ok_btn_config.listener = [&](const uint8_t)
 				{
 					run_app_id = menu.GetSelectedId();
 					looper.Break();
 				};
 		ok_btn_config.listener_trigger = Button::Config::Trigger::kDown;
-		Button ok_btn(ok_btn_config);
+		car->SetButtonIsr(0, &ok_btn_config);
 
 		looper.Loop();
+		car->SetJoystickIsr(nullptr);
+		car->SetButtonIsr(0, nullptr);
 	}
 	StartApp(run_app_id);
 }
