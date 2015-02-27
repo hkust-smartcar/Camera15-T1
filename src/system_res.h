@@ -9,9 +9,16 @@
 namespace camera
 {
 
-struct SystemRes
+class Car;
+
+}
+
+namespace camera
 {
 
+struct SystemRes
+{
+	Car *car;
 };
 
 }
