@@ -7,14 +7,18 @@
  */
 
 #include <cstdio>
+#include <cstring>
 
 #include <libsc/k60/led.h>
 #include <libsc/k60/ov7725.h>
 #include <libsc/k60/st7735r.h>
 #include <libsc/k60/system.h>
+#include <libsc/k60/timer.h>
 #include <libutil/misc.h>
 
 #include "camera_test_app.h"
+#include "car.h"
+#include "system_res.h"
 
 using namespace libsc::k60;
 
@@ -25,31 +29,34 @@ void CameraTestApp::Run()
 {
 	printf("OV7725 Test\n");
 
-	Led leds[] = {Led({0}), Led({1}), Led({2}), Led({3})};
-	St7735r::Config lcd_config;
-	lcd_config.is_revert = true;
-	St7735r lcd(lcd_config);
-	lcd.Clear(libutil::GetRgb565(0x33, 0xB5, 0xE5));
+	Car *car = GetSystemRes()->car;
+	car->GetLcd().Clear(libutil::GetRgb565(0x33, 0xB5, 0xE5));
 
-	Ov7725::Config camera_config;
-	camera_config.w = 80;
-	camera_config.h = 60;
-	camera_config.fps = Ov7725::Config::Fps::kLow;
-	Ov7725 camera(camera_config);
+	const Uint image_size = car->GetCameraW() * car->GetCameraH() / 8;
+	Byte *image2 = new Byte[image_size];
+	car->GetCamera().Start();
 
-	camera.Start();
+	int led_time = 0;
 	while (true)
 	{
-		leds[0].Switch();
-		if (camera.IsAvailable())
+		if (car->GetCamera().IsAvailable())
 		{
-			const Byte *image = camera.LockBuffer();
-			lcd.SetRegion({0, 0, 80, 60});
-			lcd.FillBits(0, 0xFFFF, image, 80 * 60);
-			camera.UnlockBuffer();
+			memcpy(image2, car->GetCamera().LockBuffer(), image_size);
+			car->GetCamera().UnlockBuffer();
+
+			car->GetLcd().SetRegion({0, 0, car->GetCameraW(), car->GetCameraH()});
+			car->GetLcd().FillBits(0, 0xFFFF, image2,
+					car->GetCameraW() * car->GetCameraH());
 		}
-		System::DelayMs(150);
+
+		if (Timer::TimeDiff(System::Time(), led_time) > 250)
+		{
+			car->GetLed(0).Switch();
+			led_time = System::Time();
+		}
 	}
+
+	car->GetCamera().Stop();
 }
 
 }
