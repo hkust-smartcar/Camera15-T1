@@ -10,9 +10,12 @@
 
 #include <libsc/k60/button.h>
 #include <libsc/k60/joystick.h>
+#include <libsc/k60/lcd_typewriter.h>
 #include <libsc/k60/led.h>
 #include <libsc/k60/st7735r.h>
 #include <libutil/looper.h>
+#include <libutil/misc.h>
+#include <libutil/string.h>
 
 #include "camera_test_app.h"
 #include "car.h"
@@ -28,6 +31,41 @@ using namespace libutil;
 
 namespace camera
 {
+
+namespace
+{
+
+void PrintTitleLine(Car *car, LcdTypewriter *writer)
+{
+	car->GetLcd().SetRegion({0, 0, St7735r::GetW(), LcdTypewriter::GetFontH()});
+	const uint16_t volt = Clamp<Uint>(7200, car->GetBatteryMeter().GetVoltage()
+			* 1000, 8200);
+	const uint16_t supplement = (volt - 7200) / 10;
+	const uint16_t color = GetRgb565(255 - supplement, 155, 155 + supplement);
+
+	const char *emotion = nullptr;
+	if (volt < 7300)
+	{
+		emotion = "T.T";
+	}
+	else if (volt < 7400)
+	{
+		emotion = ">.<";
+	}
+	else if (volt < 7600)
+	{
+		emotion = "-.-";
+	}
+	else
+	{
+		emotion = "^.^";
+	}
+	writer->SetBgColor(color);
+	writer->WriteString(String::Format("UST48 %s %.3fV", emotion,
+			car->GetBatteryMeter().GetVoltage()).c_str());
+}
+
+}
 
 void Launcher::Run()
 {
@@ -47,25 +85,39 @@ void Launcher::Run()
 					};
 			looper.RunAfter(200, blink);
 
+			LcdTypewriter::Config writer_conf;
+			writer_conf.lcd = &car->GetLcd();
+			LcdTypewriter writer(writer_conf);
+			std::function<void(const Timer::TimerInt, const Timer::TimerInt)> battery =
+					[&](const Timer::TimerInt request, const Timer::TimerInt)
+					{
+						PrintTitleLine(car, &writer);
+						looper.RunAfter(request, battery);
+					};
+			looper.RunAfter(250, battery);
+
 			car->GetLcd().Clear(0);
 
+			car->GetLcd().SetRegion({0, LcdTypewriter::GetFontH(), St7735r::GetW(),
+					St7735r::GetH() - LcdTypewriter::GetFontH()});
 			LcdMenu menu(&car->GetLcd());
 			//menu.AddItem(NORMAL_ID, "Normal");
 			menu.AddItem(CAMERA_TEST_ID, "Camera Test");
 			menu.Select(0);
 
+			int position_offset = 0;
 			Joystick::Config js_config;
 			js_config.listeners[static_cast<int>(Joystick::State::kDown)] =
 					[&](const uint8_t)
 					{
-						menu.Select(menu.GetSelectedPosition() + 1);
+						position_offset = 1;
 					};
 			js_config.listener_triggers[static_cast<int>(Joystick::State::kDown)] =
 					Joystick::Config::Trigger::kDown;
 			js_config.listeners[static_cast<int>(Joystick::State::kUp)] =
 					[&](const uint8_t)
 					{
-						menu.Select(static_cast<int>(menu.GetSelectedPosition()) - 1);
+						position_offset = -1;
 					};
 			js_config.listener_triggers[static_cast<int>(Joystick::State::kUp)] =
 					Joystick::Config::Trigger::kDown;
@@ -80,7 +132,16 @@ void Launcher::Run()
 			ok_btn_config.listener_trigger = Button::Config::Trigger::kDown;
 			car->SetButtonIsr(0, &ok_btn_config);
 
-			looper.Loop();
+			looper.ResetTiming();
+			while (!looper.IsBreak())
+			{
+				if (position_offset)
+				{
+					menu.Select(menu.GetSelectedPosition() + position_offset);
+					position_offset = 0;
+				}
+				looper.Once();
+			}
 			car->SetJoystickIsr(nullptr);
 			car->SetButtonIsr(0, nullptr);
 		}
