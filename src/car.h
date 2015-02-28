@@ -30,6 +30,12 @@ public:
 	Car();
 	~Car();
 
+	void UpdateAllEncoders()
+	{
+		m_encoders[0].Update();
+		m_encoders[1].Update();
+	}
+
 	libsc::k60::BatteryMeter& GetBatteryMeter()
 	{
 		return m_battery;
