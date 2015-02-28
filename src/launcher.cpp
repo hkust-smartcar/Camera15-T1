@@ -47,7 +47,7 @@ void PrintTitleLine(Car *car, LcdTypewriter *writer)
 	const char *emotion = nullptr;
 	if (volt < 7300)
 	{
-		emotion = "T.T";
+		emotion = "T^T";
 	}
 	else if (volt < 7400)
 	{
@@ -55,15 +55,15 @@ void PrintTitleLine(Car *car, LcdTypewriter *writer)
 	}
 	else if (volt < 7600)
 	{
-		emotion = "-.-";
+		emotion = "-_-";
 	}
 	else
 	{
-		emotion = "^.^";
+		emotion = "^3^";
 	}
 	writer->SetBgColor(color);
-	writer->WriteString(String::Format("UST48 %s %.3fV", emotion,
-			car->GetBatteryMeter().GetVoltage()).c_str());
+	writer->WriteString(String::Format("UST48 %s %d.%03dV", emotion,
+			volt / 1000, volt % 1000).c_str());
 }
 
 }
