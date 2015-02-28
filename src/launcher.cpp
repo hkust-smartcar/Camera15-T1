@@ -17,8 +17,9 @@
 #include <libutil/misc.h>
 #include <libutil/string.h>
 
-#include "camera_test_app.h"
 #include "car.h"
+#include "car_test_app.h"
+
 #include "launcher.h"
 #include "lcd_menu.h"
 #include "system_res.h"
@@ -27,7 +28,7 @@ using namespace libsc::k60;
 using namespace libutil;
 
 #define NORMAL_ID 0
-#define CAMERA_TEST_ID 1
+#define CAR_TEST_ID 1
 
 namespace camera
 {
@@ -102,7 +103,7 @@ void Launcher::Run()
 					St7735r::GetH() - LcdTypewriter::GetFontH()});
 			LcdMenu menu(&car->GetLcd());
 			//menu.AddItem(NORMAL_ID, "Normal");
-			menu.AddItem(CAMERA_TEST_ID, "Camera Test");
+			menu.AddItem(CAR_TEST_ID, "Car Test");
 			menu.Select(0);
 
 			int position_offset = 0;
@@ -156,9 +157,9 @@ void Launcher::StartApp(const int id)
 	case NORMAL_ID:
 		break;
 
-	case CAMERA_TEST_ID:
+	case CAR_TEST_ID:
 		{
-			CameraTestApp app(GetSystemRes());
+			CarTestApp app(GetSystemRes());
 			app.Run();
 		}
 		break;

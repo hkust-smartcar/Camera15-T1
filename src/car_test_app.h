@@ -1,5 +1,5 @@
 /*
- * camera_test_app.h
+ * car_test_app.h
  *
  * Author: Ben Lai, Ming Tsang, Peggy Lau
  * Copyright (c) 2014-2015 HKUST SmartCar Team
@@ -13,10 +13,10 @@
 namespace camera
 {
 
-class CameraTestApp : public App
+class CarTestApp : public App
 {
 public:
-	explicit CameraTestApp(SystemRes *res)
+	explicit CarTestApp(SystemRes *res)
 			: App(res)
 	{}
 

@@ -1,5 +1,5 @@
 /*
- * camera_test_app.cpp
+ * car_test_app.cpp
  *
  * Author: Ben Lai, Ming Tsang, Peggy Lau
  * Copyright (c) 2014-2015 HKUST SmartCar Team
@@ -20,9 +20,9 @@
 #include <libutil/misc.h>
 #include <libutil/string.h>
 
-#include "camera_test_app.h"
 #include "car.h"
 #include "system_res.h"
+#include "car_test_app.h"
 
 using namespace libsc::k60;
 using namespace libutil;
@@ -31,9 +31,9 @@ using namespace std;
 namespace camera
 {
 
-void CameraTestApp::Run()
+void CarTestApp::Run()
 {
-	printf("OV7725 Test\n");
+	printf("CarTestApp\n");
 
 	Car *car = GetSystemRes()->car;
 	car->GetLcd().Clear(libutil::GetRgb565(0x33, 0xB5, 0xE5));
