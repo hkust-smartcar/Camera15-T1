@@ -17,10 +17,12 @@
 #include <libsc/k60/led.h>
 #include <libsc/k60/ov7725.h>
 #include <libsc/k60/st7735r.h>
+#include <libutil/misc.h>
 
 #include "car.h"
 
 using namespace libsc::k60;
+using namespace libutil;
 
 namespace camera
 {
@@ -131,6 +133,13 @@ Car::Car()
 
 Car::~Car()
 {}
+
+void Car::SetMotorPower(const uint8_t id, const int16_t power)
+{
+	const Uint power_ = Clamp<Uint>(0, abs(power), 1000);
+	m_motors[id].SetClockwise((power < 0) ^ (id == 0));
+	m_motors[id].SetPower(power_);
+}
 
 void Car::SetButtonIsr(const uint8_t id, const Button::Config *config)
 {

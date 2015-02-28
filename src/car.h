@@ -36,6 +36,15 @@ public:
 		m_encoders[1].Update();
 	}
 
+	/**
+	 * Set the power of the motor, a negative power will drive the corresponding
+	 * wheel backwards
+	 *
+	 * @param id
+	 * @param power Power scale in [-1000, 1000]
+	 */
+	void SetMotorPower(const uint8_t id, const int16_t power);
+
 	libsc::k60::BatteryMeter& GetBatteryMeter()
 	{
 		return m_battery;
