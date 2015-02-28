@@ -37,6 +37,15 @@ public:
 	}
 
 	/**
+	 * Return the encoder count, a positive count means the corresponding wheel
+	 * going forward
+	 *
+	 * @param id
+	 * @return
+	 */
+	int32_t GetEncoderCount(const uint8_t id);
+
+	/**
 	 * Set the power of the motor, a negative power will drive the corresponding
 	 * wheel backwards
 	 *

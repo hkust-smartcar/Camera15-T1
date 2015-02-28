@@ -134,6 +134,18 @@ Car::Car()
 Car::~Car()
 {}
 
+int32_t Car::GetEncoderCount(const uint8_t id)
+{
+	if (id == 0)
+	{
+		return m_encoders[id].GetCount();
+	}
+	else
+	{
+		return -m_encoders[id].GetCount();
+	}
+}
+
 void Car::SetMotorPower(const uint8_t id, const int16_t power)
 {
 	const Uint power_ = Clamp<Uint>(0, abs(power), 1000);
