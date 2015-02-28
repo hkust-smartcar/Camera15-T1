@@ -66,8 +66,7 @@ void CarTestApp::Run()
 				car->GetLcd().SetRegion({0, 144, St7735r::GetW(),
 						LcdTypewriter::GetFontH()});
 				writer.WriteString(String::Format("%ld, %ld\n",
-						car->GetEncoder(0).GetCount(),
-						car->GetEncoder(1).GetCount()).c_str());
+						car->GetEncoderCount(0), car->GetEncoderCount(1)).c_str());
 				looper.RunAfter(request, encoder);
 			};
 	looper.RunAfter(250, encoder);
