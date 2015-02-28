@@ -15,6 +15,7 @@
 #include <libsc/k60/st7735r.h>
 #include <libsc/k60/system.h>
 #include <libsc/k60/timer.h>
+#include <libutil/looper.h>
 #include <libutil/misc.h>
 
 #include "camera_test_app.h"
@@ -22,6 +23,7 @@
 #include "system_res.h"
 
 using namespace libsc::k60;
+using namespace libutil;
 using namespace std;
 
 namespace camera
@@ -36,9 +38,19 @@ void CameraTestApp::Run()
 
 	const Uint image_size = car->GetCameraW() * car->GetCameraH() / 8;
 	unique_ptr<Byte[]> image2(new Byte[image_size]);
-	car->GetCamera().Start();
 
-	int led_time = 0;
+	Looper looper;
+
+	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> blink =
+			[&](const Timer::TimerInt request, const Timer::TimerInt)
+			{
+				car->GetLed(0).Switch();
+				looper.RunAfter(request, blink);
+			};
+	looper.RunAfter(200, blink);
+
+	car->GetCamera().Start();
+	looper.ResetTiming();
 	while (!car->GetButton(1).IsDown())
 	{
 		if (car->GetCamera().IsAvailable())
@@ -51,11 +63,7 @@ void CameraTestApp::Run()
 					car->GetCameraW() * car->GetCameraH());
 		}
 
-		if (Timer::TimeDiff(System::Time(), led_time) > 250)
-		{
-			car->GetLed(0).Switch();
-			led_time = System::Time();
-		}
+		looper.Once();
 	}
 
 	car->GetCamera().Stop();
