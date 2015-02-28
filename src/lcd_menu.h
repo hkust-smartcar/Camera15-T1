@@ -51,6 +51,8 @@ private:
 	Uint m_select;
 	const Uint m_max_line;
 
+	Uint m_offset_y;
+
 	std::vector<std::pair<Uint, const char*>> m_items;
 };
 

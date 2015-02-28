@@ -38,7 +38,8 @@ LcdMenu::LcdMenu(Lcd *lcd)
 		  m_writer(GetTypeWriterConfig(lcd)),
 		  m_first(0),
 		  m_select(0),
-		  m_max_line(Lcd::GetH() / LcdTypewriter::GetFontH())
+		  m_max_line(m_lcd->GetRegion().h / LcdTypewriter::GetFontH()),
+		  m_offset_y(m_lcd->GetRegion().y)
 {}
 
 void LcdMenu::AddItem(const Uint id, const char *label_literal)
@@ -60,10 +61,10 @@ Uint LcdMenu::GetSelectedId() const
 
 void LcdMenu::Redraw()
 {
-	Uint y = 0;
+	Uint y = m_offset_y;
 	for (Uint i = m_first; i < m_items.size() && i < m_max_line; ++i)
 	{
-		//m_lcd->SetRegion(Lcd::Rect(0, y, Lcd::GetW(), LcdTypewriter::GetFontH()));
+		m_lcd->SetRegion(Lcd::Rect(0, y, Lcd::GetW(), LcdTypewriter::GetFontH()));
 		m_writer.SetBgColor((i == m_select) ? 0x35BC : 0);
 		m_writer.WriteString(m_items[i].second);
 		y += LcdTypewriter::GetFontH();
