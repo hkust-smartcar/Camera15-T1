@@ -9,6 +9,8 @@
 #include <cstdint>
 
 #include <libsc/k60/ab_encoder.h>
+#include <libsc/k60/battery_meter.h>
+#include <libsc/k60/button.h>
 #include <libsc/k60/dir_motor.h>
 #include <libsc/k60/futaba_s3010.h>
 #include <libsc/k60/jy_mcu_bt_106.h>
@@ -25,6 +27,13 @@ namespace camera
 
 namespace
 {
+
+BatteryMeter::Config GetBatteryMeterConfig()
+{
+	BatteryMeter::Config product;
+	product.voltage_ratio = 0.39;
+	return product;
+}
 
 Button::Config GetButtonConfig(const uint8_t id)
 {
@@ -106,7 +115,8 @@ JyMcuBt106::Config GetUartConfig()
 }
 
 Car::Car()
-		: m_buttons{Button(GetButtonConfig(0)), Button(GetButtonConfig(1))},
+		: m_battery(GetBatteryMeterConfig()),
+		  m_buttons{Button(GetButtonConfig(0)), Button(GetButtonConfig(1))},
 		  m_camera(GetOv7725Config()),
 		  m_encoders{AbEncoder(GetEncoderConfig(0)),
 				AbEncoder(GetEncoderConfig(1))},

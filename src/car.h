@@ -11,6 +11,7 @@
 #include <cstdint>
 
 #include <libsc/k60/ab_encoder.h>
+#include <libsc/k60/battery_meter.h>
 #include <libsc/k60/button.h>
 #include <libsc/k60/dir_motor.h>
 #include <libsc/k60/futaba_s3010.h>
@@ -28,6 +29,11 @@ class Car
 public:
 	Car();
 	~Car();
+
+	libsc::k60::BatteryMeter& GetBatteryMeter()
+	{
+		return m_battery;
+	}
 
 	libsc::k60::Button& GetButton(const uint8_t id)
 	{
@@ -106,6 +112,7 @@ public:
 	}
 
 private:
+	libsc::k60::BatteryMeter m_battery;
 	libsc::k60::Button m_buttons[2];
 	libsc::k60::Ov7725 m_camera;
 	libsc::k60::AbEncoder m_encoders[2];
