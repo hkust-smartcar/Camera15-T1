@@ -24,6 +24,9 @@
 using namespace libsc::k60;
 using namespace libutil;
 
+#define SERVO_MID_DEGREE 950
+#define SERVO_AMPLITUDE 370
+
 namespace camera
 {
 
@@ -129,7 +132,9 @@ Car::Car()
 		  m_motors{DirMotor(GetMotorConfig(0)), DirMotor(GetMotorConfig(1))},
 		  m_servo(GetServoConfig()),
 		  m_uart(GetUartConfig())
-{}
+{
+	m_servo.SetDegree(SERVO_MID_DEGREE);
+}
 
 Car::~Car()
 {}
@@ -151,6 +156,13 @@ void Car::SetMotorPower(const uint8_t id, const int16_t power)
 	const Uint power_ = Clamp<Uint>(0, abs(power), 1000);
 	m_motors[id].SetClockwise((power < 0) ^ (id == 0));
 	m_motors[id].SetPower(power_);
+}
+
+void Car::SetTurning(const int16_t percentage)
+{
+	const int percentage_ = libutil::Clamp<int>(-1000, percentage, 1000);
+	const int degree = SERVO_MID_DEGREE + (percentage_ * SERVO_AMPLITUDE / 1000);
+	m_servo.SetDegree(degree);
 }
 
 void Car::SetButtonIsr(const uint8_t id, const Button::Config *config)

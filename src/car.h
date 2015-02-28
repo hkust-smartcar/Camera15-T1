@@ -54,6 +54,14 @@ public:
 	 */
 	void SetMotorPower(const uint8_t id, const int16_t power);
 
+	/**
+	 * Set the turning percentage, negative input means turning right
+	 *
+	 * @param percentage Specifying how aggressively should the car turn,
+	 * in [-1000, 1000], where passing 0 basically means going straight
+	 */
+	void SetTurning(const int16_t percentage);
+
 	libsc::k60::BatteryMeter& GetBatteryMeter()
 	{
 		return m_battery;
