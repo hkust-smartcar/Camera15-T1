@@ -211,10 +211,10 @@ $(OUT_OBJ_PATH)/%.o: $$(subst $(BIN_SUFFIX),,$(SRC_PATH)/%.cpp)
 clean:
 	$(info Cleaning $(<))
 ifdef WIN32
-	@rmdir /s /q $(OUT_OBJ_PATH) $(OUT_LIB_PATH)
+	@rmdir /s /q $(OUT_OBJ_PATH) $(OUT_EXE_PATH)
 
 else ifdef UNIX
-	@rm -f $(OUT_LIB_PATH)/*.a
+	@rm -f $(OUT_EXE_PATH)/*.a
 	@find $(OUT_OBJ_PATH) -type f \( -name *.o -o -name *.d \) -exec rm -f {} \;
 
 endif
