@@ -62,6 +62,7 @@ Ov7725::Config GetOv7725Config()
 	product.w = Car::GetCameraW();
 	product.h = Car::GetCameraH();
 	product.fps = Ov7725::Config::Fps::kLow;
+	product.contrast = 0x38;
 	return product;
 }
 
