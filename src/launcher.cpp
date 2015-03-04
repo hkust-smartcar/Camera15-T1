@@ -19,6 +19,7 @@
 
 #include "car.h"
 #include "car_test_app.h"
+#include "run_test.h"
 
 #include "launcher.h"
 #include "lcd_menu.h"
@@ -29,6 +30,7 @@ using namespace libutil;
 
 #define NORMAL_ID 0
 #define CAR_TEST_ID 1
+#define RUN_TEST_ID 2
 
 namespace camera
 {
@@ -81,8 +83,8 @@ void Launcher::Run()
 			std::function<void(const Timer::TimerInt, const Timer::TimerInt)> blink =
 					[&](const Timer::TimerInt request, const Timer::TimerInt)
 					{
-						car->GetLed(0).Switch();
-						looper.RunAfter(request, blink);
+				car->GetLed(0).Switch();
+				looper.RunAfter(request, blink);
 					};
 			looper.RunAfter(200, blink);
 
@@ -92,18 +94,19 @@ void Launcher::Run()
 			std::function<void(const Timer::TimerInt, const Timer::TimerInt)> battery =
 					[&](const Timer::TimerInt request, const Timer::TimerInt)
 					{
-						PrintTitleLine(car, &writer);
-						looper.RunAfter(request, battery);
+				PrintTitleLine(car, &writer);
+				looper.RunAfter(request, battery);
 					};
 			looper.RunAfter(250, battery);
 
 			car->GetLcd().Clear(0);
 
 			car->GetLcd().SetRegion({0, LcdTypewriter::GetFontH(), St7735r::GetW(),
-					St7735r::GetH() - LcdTypewriter::GetFontH()});
+				St7735r::GetH() - LcdTypewriter::GetFontH()});
 			LcdMenu menu(&car->GetLcd());
 			//menu.AddItem(NORMAL_ID, "Normal");
 			menu.AddItem(CAR_TEST_ID, "Car Test");
+			menu.AddItem(RUN_TEST_ID, "Run Test");
 			menu.Select(0);
 
 			int position_offset = 0;
@@ -111,14 +114,14 @@ void Launcher::Run()
 			js_config.listeners[static_cast<int>(Joystick::State::kDown)] =
 					[&](const uint8_t)
 					{
-						position_offset = 1;
+				position_offset = 1;
 					};
 			js_config.listener_triggers[static_cast<int>(Joystick::State::kDown)] =
 					Joystick::Config::Trigger::kDown;
 			js_config.listeners[static_cast<int>(Joystick::State::kUp)] =
 					[&](const uint8_t)
 					{
-						position_offset = -1;
+				position_offset = -1;
 					};
 			js_config.listener_triggers[static_cast<int>(Joystick::State::kUp)] =
 					Joystick::Config::Trigger::kDown;
@@ -126,10 +129,10 @@ void Launcher::Run()
 
 			Button::Config ok_btn_config;
 			ok_btn_config.listener = [&](const uint8_t)
-					{
-						run_app_id = menu.GetSelectedId();
-						looper.Break();
-					};
+							{
+				run_app_id = menu.GetSelectedId();
+				looper.Break();
+							};
 			ok_btn_config.listener_trigger = Button::Config::Trigger::kDown;
 			car->SetButtonIsr(0, &ok_btn_config);
 
@@ -158,11 +161,17 @@ void Launcher::StartApp(const int id)
 		break;
 
 	case CAR_TEST_ID:
-		{
-			CarTestApp app(GetSystemRes());
-			app.Run();
-		}
-		break;
+	{
+		CarTestApp app(GetSystemRes());
+		app.Run();
+	}
+	break;
+	case RUN_TEST_ID:
+	{
+		RunTestApp app(GetSystemRes());
+		app.Run();
+	}
+	break;
 	}
 }
 
