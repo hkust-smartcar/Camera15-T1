@@ -169,11 +169,11 @@ int16_t RunTestApp::Analyze(Byte* image){
 			l_margin.push_back(std::make_pair(column,0));
 		if(r_margin.size()<column+1 && bitmap[column][79]==false)
 			r_margin.push_back(std::make_pair(column,79));
-		else
+		else if(r_margin.size()<column+1 && bitmap[column][79]==true)
 			r_margin.push_back(std::make_pair(column,0));
-		char buffer[100];
-		sprintf(buffer,"%d: %d,%d\n",column,l_margin[column].second,r_margin[column].second);
-		car->GetUart().SendStr(buffer);
+//		char buffer[100];
+//		sprintf(buffer,"%d: %d,%d\n",column,l_margin[column].second,r_margin[column].second);
+//		car->GetUart().SendStr(buffer);
 	}
 
 	std::vector<std::pair<int16_t, int16_t>>midpoint;
@@ -185,10 +185,10 @@ int16_t RunTestApp::Analyze(Byte* image){
 	double mid_sum =0;
 	double far_sum =0;
 
-	int16_t x_count = 0;
+	//int16_t x_count = 0;
 	int16_t black_count = 0;
 
-	for (int far=0; far<car->GetCameraH()/3; far++){
+	for (int far=0; far<midpoint.size()/3; far++){
 		if(midpoint[far].second==0){
 			black_count++;
 		}
@@ -196,7 +196,7 @@ int16_t RunTestApp::Analyze(Byte* image){
 	}
 	x_sum += far_sum; //*0.2;
 
-	for (int mid=car->GetCameraH()/3; mid<car->GetCameraH()/3*2; mid++){
+	for (int mid=midpoint.size()/3; mid<midpoint.size()/3*2; mid++){
 		if(midpoint[mid].second==0){
 			black_count++;
 		}
@@ -204,17 +204,21 @@ int16_t RunTestApp::Analyze(Byte* image){
 	}
 	x_sum += mid_sum; //*0.7;
 
-	for (int near=car->GetCameraH()/3*2; near<car->GetCameraH(); near++){
+	for (int near=midpoint.size()/3*2; near<midpoint.size(); near++){
 		if(midpoint[near].second==0){
-					black_count++;
-				}
+			black_count++;
+		}
 		near_sum += midpoint[near].second;
 	}
 	x_sum += near_sum; //*0.1;
 
-	if (car->GetServo().GetDegree()-(950+(x_sum/60-28)*FACTOR*370/1000)>300 ||car->GetServo().GetDegree()-(950+(x_sum/60-28)*FACTOR*370/1000)<-300){
-		return 0;
-	}
+//	char mp_buffer[100];
+//	sprintf(mp_buffer,"x_avg: %f\n", x_sum/60);
+//	car->GetUart().SendStr(mp_buffer);
+
+//	if (car->GetServo().GetDegree()-(950+(x_sum/60-28)*FACTOR*370/1000)>300 ||car->GetServo().GetDegree()-(950+(x_sum/60-28)*FACTOR*370/1000)<-300){
+//		return 0;
+//	}
 
 	return -(x_sum/60-28)*FACTOR; //26
 }
