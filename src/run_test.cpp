@@ -101,11 +101,29 @@ void RunTestApp::Run()
 			{
 		car->GetLcd().SetRegion({0, 144, St7735r::GetW(),
 			LcdTypewriter::GetFontH()});
+		if(Analyze(image_ana)<1000){
 		writer.WriteString(String::Format("%ld\n",
 				Analyze(image_ana)/FACTOR+MIDPOINT).c_str());
+		}
+		else if(Analyze(image_ana)>=1000){
+			writer.WriteString(String::Format("RA at: %ld\n",
+							Analyze(image_ana)-1000).c_str());
+		}
 		looper.RunAfter(request, x_avg);
 			};
 	looper.RunAfter(150, x_avg);
+
+	bool no_ec_reading = car->GetEncoderCount(0)==0 && car->GetEncoderCount(1)==0;
+	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> motor_safety =
+					[&](const Timer::TimerInt request, const Timer::TimerInt)
+					{
+				car->UpdateAllEncoders();
+				if(no_ec_reading && (car->GetMotor(0).GetPower()>0||car->GetMotor(1).GetPower()>0)){
+					car->SetMotorPower(0,0);
+					car->SetMotorPower(1,0);
+				}
+				looper.RunAfter(request, motor_safety);
+					};
 
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> trigger =
 			[&](const Timer::TimerInt request, const Timer::TimerInt)
@@ -116,6 +134,7 @@ void RunTestApp::Run()
 				car->SetMotorPower(0,250);
 				car->SetMotorPower(1,250);
 				triggered=true;
+//				looper.RunAfter(1005, motor_safety);
 				looper.RunAfter(3000, trigger);
 			}
 			else
@@ -132,8 +151,8 @@ void RunTestApp::Run()
 			};
 	looper.RunAfter(500, trigger);
 
-//	car->SetMotorPower(0,200);
-//	car->SetMotorPower(1,200);
+	car->SetMotorPower(0,200);
+	car->SetMotorPower(1,200);
 	car->GetCamera().Start();
 	looper.ResetTiming();
 	while (!car->GetButton(1).IsDown())
@@ -229,52 +248,58 @@ int16_t RunTestApp::Analyze(Byte* image){
 		if(midpoint[far].second==0){
 			black_count++;
 		}
-		if(midpoint[far].second-prev>car->GetCameraW()*4/5){
+		if((midpoint[far].second-prev>car->GetCameraW()/4 && midpoint[far].second-prev<car->GetCameraW()/2)&&car->GetServo().GetDegree()>=950){
 			RightAngle=true;
+			return 1000+far;
 		}
 		far_sum += midpoint[far].second;
 		prev=midpoint[far].second;
 	}
-	x_sum += far_sum*0.2;
+	x_sum += far_sum*0.1;
 
 	for (int mid=midpoint.size()/3; mid<midpoint.size()/3*2; mid++){
 		if(midpoint[mid].second==0){
 			black_count++;
 		}
-		if(midpoint[mid].second-prev>car->GetCameraW()*4/5){
+		if((midpoint[mid].second-prev>car->GetCameraW()/4 && midpoint[mid].second-prev<car->GetCameraW()/2)&&car->GetServo().GetDegree()>=950){
 			RightAngle=true;
+			return 1000+mid;
 		}
 		mid_sum += midpoint[mid].second;
 		prev=midpoint[mid].second;
 	}
-	x_sum += mid_sum*0.7;
+	if(black_count>midpoint.size()*3/5 && !RightAngle)
+		x_sum += mid_sum*0.2;
+	else
+		x_sum += mid_sum*0.7;
 
 	for (int near=midpoint.size()/3*2; near<midpoint.size(); near++){
-		if(midpoint[near].second==0){
-			black_count++;
-		}
-		if(midpoint[near].second-prev>car->GetCameraW()*5/6){
+//		if(midpoint[near].second==0){
+//			black_count++;
+//		}
+		if((midpoint[near].second-prev>car->GetCameraW()/4 && midpoint[near].second-prev<car->GetCameraW()/2)&&car->GetServo().GetDegree()>=950){
 			RightAngle=true;
+			return 1000+near;
 		}
 		near_sum += midpoint[near].second;
 		prev=midpoint[near].second;
 	}
-	x_sum += near_sum*0.1;
+	if(black_count>midpoint.size()*3/5 && !RightAngle)
+		x_sum += near_sum*0.7;
+	else
+		x_sum += near_sum*0.2;
 
 	//	char mp_buffer[100];
 	//	sprintf(mp_buffer,"x_avg: %f\n", x_sum/60);
 	//	car->GetUart().SendStr(mp_buffer);
 
-	//	if (car->GetServo().GetDegree()-(950+(x_sum/60-28)*FACTOR*370/1000)>300 ||car->GetServo().GetDegree()-(950+(x_sum/60-28)*FACTOR*370/1000)<-300){
-	//		return 0;
-	//	}
-
-	if(RightAngle && car->GetServo().GetDegree()>950)
-		return 1200;
+//	if((RightAngle && car->GetServo().GetDegree()>950)){
+//			return 1250;
+//	}
 //	else if(RightAngle && car->GetServo().GetDegree()<950)
 //		return 600;
 
-	return -(x_sum/car->GetCameraH()-MIDPOINT)*FACTOR; //26
+	return -(x_sum/car->GetCameraH()-MIDPOINT)*FACTOR;
+}
 }
 
-}
