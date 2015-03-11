@@ -62,8 +62,7 @@ Ov7725::Config GetOv7725Config()
 	product.w = Car::GetCameraW();
 	product.h = Car::GetCameraH();
 	product.fps = Ov7725::Config::Fps::kLow;
-	product.contrast = 0x0D;
-	product.brightness = 0x50 ;
+	product.contrast = 0x40;
 	return product;
 }
 
@@ -155,7 +154,7 @@ int32_t Car::GetEncoderCount(const uint8_t id)
 
 void Car::SetMotorPower(const uint8_t id, const int16_t power)
 {
-	const Uint power_ = Clamp<Uint>(0, abs(power), 1000);
+	const Uint power_ = libutil::Clamp<Uint>(0, abs(power), 1000);
 	m_motors[id].SetClockwise((power < 0) ^ (id == 0));
 	m_motors[id].SetPower(power_);
 }

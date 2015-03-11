@@ -25,13 +25,23 @@ class RunTestApp : public App
 public:
 	explicit RunTestApp(SystemRes *res)
 				: App(res)
-		{triggered = false;}
+		{
+		triggered = false;
+		avg_width = 40;
+		}
 
 	void Run() override;
 private:
-	int16_t Analyze(Byte* image);
-	bool Trigger(int32_t l_encoder_reading, int32_t r_encoder_reading);
+	Byte* image = new Byte[80*60/8];
+	std::vector<std::pair<int16_t, int16_t>> left;
+	std::vector<std::pair<int16_t, int16_t>> right;
 	bool triggered;
+	int16_t avg_width;
+
+	int16_t Analyze();
+	bool Trigger(int32_t l_encoder_reading, int32_t r_encoder_reading);
+	void FindMargin();
+	bool is_error(int16_t row, int16_t position, bool side /*left = true, right=false*/);
 
 };
 }
