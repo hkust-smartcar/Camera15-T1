@@ -20,14 +20,13 @@
 #include <libutil/looper.h>
 #include <libutil/misc.h>
 #include <libutil/string.h>
+#include <libsc/k60/jy_mcu_bt_106.h>
 #include "libutil/misc.h"
 
 #include "car.h"
 #include "system_res.h"
 #include "run_test.h"
 
-#define PI 3.14159265
-#define ROUND_2_INT(f) ((int)(f >= 0.0 ? (f + 0.5) : (f - 0.5)))
 #define FACTOR 200
 #define MIDPOINT 12
 
@@ -47,7 +46,6 @@ void RunTestApp::Run()
 
 	const Uint image_size = car->GetCameraW() * car->GetCameraH() / 8;
 	unique_ptr<Byte[]> image2(new Byte[image_size]);
-	Byte* image_ana = new Byte[image_size];
 
 	Looper looper;
 
@@ -93,19 +91,38 @@ void RunTestApp::Run()
 			};
 	looper.RunAfter(200, servo);
 
-	car->GetLcd().SetRegion({0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()});
-	writer.WriteString("X_AVG:");
-
-	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> x_avg =
-			[&](const Timer::TimerInt request, const Timer::TimerInt)
-			{
-		car->GetLcd().SetRegion({0, 144, St7735r::GetW(),
-			LcdTypewriter::GetFontH()});
-		writer.WriteString(String::Format("%ld\n",
-				Analyze(image_ana)/FACTOR+MIDPOINT).c_str());
-		looper.RunAfter(request, x_avg);
-			};
-	looper.RunAfter(150, x_avg);
+//		car->GetLcd().SetRegion({0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()});
+//		writer.WriteString("X_AVG:");
+//
+//			std::function<void(const Timer::TimerInt, const Timer::TimerInt)> x_avg =
+//					[&](const Timer::TimerInt request, const Timer::TimerInt)
+//					{
+//				car->GetLcd().SetRegion({0, 144, St7735r::GetW(),
+//					LcdTypewriter::GetFontH()});
+//				FindMargin();
+//				if(Analyze()<1000){
+//					writer.WriteString(String::Format("%ld\n",
+//							Analyze()/FACTOR+MIDPOINT).c_str());
+//				}
+//				else if(Analyze()>=1000){
+//					writer.WriteString(String::Format("RA at: %ld\n",
+//							Analyze()-1000).c_str());
+//				}
+//				looper.RunAfter(request, x_avg);
+//					};
+//			looper.RunAfter(150, x_avg);
+//
+//	bool no_ec_reading = car->GetEncoderCount(0)==0 && car->GetEncoderCount(1)==0;
+//	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> motor_safety =
+//			[&](const Timer::TimerInt request, const Timer::TimerInt)
+//			{
+//		car->UpdateAllEncoders();
+//		if(no_ec_reading && (car->GetMotor(0).GetPower()>0||car->GetMotor(1).GetPower()>0)){
+//			car->SetMotorPower(0,0);
+//			car->SetMotorPower(1,0);
+//		}
+//		looper.RunAfter(request, motor_safety);
+//			};
 
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> trigger =
 			[&](const Timer::TimerInt request, const Timer::TimerInt)
@@ -116,6 +133,7 @@ void RunTestApp::Run()
 				car->SetMotorPower(0,250);
 				car->SetMotorPower(1,250);
 				triggered=true;
+				//				looper.RunAfter(1005, motor_safety);
 				looper.RunAfter(3000, trigger);
 			}
 			else
@@ -132,8 +150,8 @@ void RunTestApp::Run()
 			};
 	looper.RunAfter(500, trigger);
 
-//	car->SetMotorPower(0,200);
-//	car->SetMotorPower(1,200);
+	//	car->SetMotorPower(0,200);
+	//	car->SetMotorPower(1,200);
 	car->GetCamera().Start();
 	looper.ResetTiming();
 	while (!car->GetButton(1).IsDown())
@@ -141,7 +159,6 @@ void RunTestApp::Run()
 		if (car->GetCamera().IsAvailable())
 		{
 			memcpy(image2.get(), car->GetCamera().LockBuffer(), image_size);
-			memcpy(image_ana,car->GetCamera().LockBuffer(), image_size);
 			car->GetCamera().UnlockBuffer();
 
 			car->GetLcd().SetRegion({0, 0, car->GetCameraW(), car->GetCameraH()});
@@ -149,7 +166,9 @@ void RunTestApp::Run()
 					car->GetCameraW() * car->GetCameraH());
 
 			/*SERVO_MID_DEGREE + (percentage_ * SERVO_AMPLITUDE / 1000)*/
-			car->SetTurning(Analyze(image_ana));
+			FindMargin(image2.get(),writer);
+			car->SetTurning(Analyze());
+			initiate = true;
 		}
 
 		looper.Once();
@@ -165,116 +184,118 @@ bool RunTestApp::Trigger(int32_t l_encoder_reading, int32_t r_encoder_reading){
 	return false;
 }
 
-int16_t RunTestApp::Analyze(Byte* image){
+int16_t RunTestApp::Analyze(){
 	Car *car = GetSystemRes()->car;
-	bool bitmap[car->GetCameraH()][car->GetCameraW()];
-
-	std::vector<std::pair<int16_t, int16_t>> l_margin;
-	std::vector<std::pair<int16_t, int16_t>> r_margin;
-
-	l_margin.clear();
-	r_margin.clear();
-
-	for(int16_t image_row=0; image_row<car->GetCameraH(); image_row++){
-		for(int16_t byte=0; byte<10; byte++){
-			Byte check_image = image[image_row*10+byte];
-			/*to bit*/
-			for(int16_t bit=7; bit>=0; bit--){
-				bitmap[image_row][8*byte+bit] = check_image & 0x01;
-				check_image >>= 1;
-			}
-		}
-	}
-	int16_t row=0;
-	for(int16_t column=0; column<car->GetCameraH(); column++){
-		bool prev = bitmap[column][row];
-		for(row=1; row<80; row++){
-			if(bitmap[column][row]!=prev){
-				if (prev){
-					l_margin.push_back(std::make_pair(column,row));
-				}
-				else if(!prev){
-					r_margin.push_back(std::make_pair(column,row));
-				}
-			}
-			prev = bitmap[column][row];
-		}
-		if(l_margin.size()<column+1)
-			l_margin.push_back(std::make_pair(column,0));
-		if(r_margin.size()<column+1 && bitmap[column][79]==false)
-			r_margin.push_back(std::make_pair(column,79));
-		else if(r_margin.size()<column+1 && bitmap[column][79]==true)
-			r_margin.push_back(std::make_pair(column,0));
-		//		char buffer[100];
-		//		sprintf(buffer,"%d: %d,%d\n",column,l_margin[column].second,r_margin[column].second);
-		//		car->GetUart().SendStr(buffer);
-	}
-
-	std::vector<std::pair<int16_t, int16_t>>midpoint;
-	for(int k=0; k<car->GetCameraH(); k++){
-		midpoint.push_back(std::make_pair(k,(l_margin[k].second+r_margin[k].second)/2));
-	}
 	double x_sum = 0;
-	double near_sum =0;
-	double mid_sum =0;
-	double far_sum =0;
 
-	int16_t prev=midpoint[0].second;
-	bool RightAngle=false;
-
-	//int16_t x_count = 0;
-	int16_t black_count = 0;
-
-	for (int far=0; far<midpoint.size()/3; far++){
-		if(midpoint[far].second==0){
-			black_count++;
-		}
-		if(midpoint[far].second-prev>car->GetCameraW()*4/5){
-			RightAngle=true;
-		}
-		far_sum += midpoint[far].second;
-		prev=midpoint[far].second;
+	if(black_count>midpoint().size()*3/5 && !RightAngle){
+		x_sum = AvgCal(midpoint(),0,midpoint().size()/3)*0.1
+				+ AvgCal(midpoint(),midpoint().size()/3,midpoint().size()/3*2)*0.2
+				+ AvgCal(midpoint(),midpoint().size()/3*2,midpoint().size())*0.7;
 	}
-	x_sum += far_sum*0.2;
+	else
+		x_sum = AvgCal(midpoint(),0,midpoint().size()/3)*0.1
+		+ AvgCal(midpoint(),midpoint().size()/3,midpoint().size()/3*2)*0.7
+		+ AvgCal(midpoint(),midpoint().size()/3*2,midpoint().size())*0.2;
 
-	for (int mid=midpoint.size()/3; mid<midpoint.size()/3*2; mid++){
-		if(midpoint[mid].second==0){
-			black_count++;
+	return -(x_sum/car->GetCameraH()-MIDPOINT)*FACTOR;
+}
+
+void RunTestApp::FindMargin(Byte* image,LcdTypewriter writer){
+
+	Car *car = GetSystemRes()->car;
+	car->GetLcd().Clear(libutil::GetRgb565(0x33, 0xB5, 0xE5));
+
+	std::vector<std::pair<int16_t, int16_t>> current_left;
+	std::vector<std::pair<int16_t, int16_t>> current_right;
+
+	for(int16_t image_row=0; image_row< car->GetCameraH(); image_row++){
+
+		bool prev = image[image_row*10] & 0x01;
+		for(int16_t byte=0; byte<10; byte++){
+
+			Byte check_image = image[image_row*10+byte];
+
+			for(int16_t bit=1; bit<8; bit++){
+
+				/*if 0->1 or 1->0, check if error*/
+				if (!((check_image & 0x01) & prev)){
+					if(!is_error(image_row,byte*10+bit,prev)){
+					if(prev) //1 -> 0
+						current_left.push_back(std::make_pair(image_row,byte*10+bit));
+					else //0 -> 1
+						current_right.push_back(std::make_pair(image_row,byte*10+bit));
+					}
+					prev = check_image & 0x01;
+					check_image >>= 1;
+				}
+				else {
+					prev = check_image & 0x01;
+					check_image >>= 1;
+				}
+			}
+
 		}
-		if(midpoint[mid].second-prev>car->GetCameraW()*4/5){
-			RightAngle=true;
+		if(current_left.size()<image_row+1)
+			current_left.push_back(std::make_pair(image_row, 0));
+		if(current_right.size()<image_row+1){
+			if(prev)
+				current_right.push_back(std::make_pair(image_row,0));
+			else
+				current_right.push_back(std::make_pair(image_row,car->GetCameraW()));
 		}
-		mid_sum += midpoint[mid].second;
-		prev=midpoint[mid].second;
+
 	}
-	x_sum += mid_sum*0.7;
+}
 
-	for (int near=midpoint.size()/3*2; near<midpoint.size(); near++){
-		if(midpoint[near].second==0){
-			black_count++;
-		}
-		if(midpoint[near].second-prev>car->GetCameraW()*5/6){
-			RightAngle=true;
-		}
-		near_sum += midpoint[near].second;
-		prev=midpoint[near].second;
+bool RunTestApp::is_error(int16_t image_row,int16_t position,bool prev){
+	// compare with previous image
+	// near  far  far  near
+	if (initiate){
+		if(<avg_width/2)
+			return true;
 	}
-	x_sum += near_sum*0.1;
+	return false;
 
-	//	char mp_buffer[100];
-	//	sprintf(mp_buffer,"x_avg: %f\n", x_sum/60);
-	//	car->GetUart().SendStr(mp_buffer);
+}
 
-	//	if (car->GetServo().GetDegree()-(950+(x_sum/60-28)*FACTOR*370/1000)>300 ||car->GetServo().GetDegree()-(950+(x_sum/60-28)*FACTOR*370/1000)<-300){
-	//		return 0;
-	//	}
+double RunTestApp::AvgCal(std::vector<std::pair<int16_t, int16_t>>midpoint, int start, int end){
+	Car *car = GetSystemRes()->car;
+	int16_t prev = midpoint[start].second;
+	double sum = 0;
+	RightAngle = false;
 
-	if(RightAngle && car->GetServo().GetDegree()>950)
-		return 1200;
-//	else if(RightAngle && car->GetServo().GetDegree()<950)
-//		return 600;
+	for (int i=start+1; i<end; i++){
 
-	return -(x_sum/car->GetCameraH()-MIDPOINT)*FACTOR; //26
+		if((midpoint[i].second-prev>car->GetCameraW()/4 && midpoint[i].second-prev<car->GetCameraW()/2)&&car->GetServo().GetDegree()>=950){
+			RightAngle=true;
+			return 1000+i;
+		}
+		sum += midpoint[i].second;
+		prev=midpoint[i].second;
+	}
+	return sum;
+}
+
+std::vector<std::pair<int16_t, int16_t>> RunTestApp::midpoint(){
+	avg_width=0;
+	int avg_count =0;
+	black_count = 0;
+
+	Car *car = GetSystemRes()->car;
+	std::vector<std::pair<int16_t, int16_t>> midpoint;
+
+	for(int k=0; k<car->GetCameraH(); k++){
+		midpoint.push_back(std::make_pair(k,(left[k]+right[k])/2));
+		if (midpoint[k].second==0)
+			black_count++;
+		if(right[k]-left[k]>0)
+			avg_width += right[k]-left[k];
+		avg_count++;
+	}
+	avg_width /= avg_count;
+
+	return midpoint;
 }
 
 }
