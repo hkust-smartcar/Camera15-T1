@@ -10,8 +10,9 @@
 
 #include "app.h"
 #include "car.h"
-#include <libsc/k60/lcd_typewriter.h>
+#include <libsc/lcd_typewriter.h>
 #include <libutil/positional_pid_controller.h>
+#include <libsc/k60/jy_mcu_bt_106.h>
 
 #define kp 0.9
 #define ki	0
@@ -29,10 +30,11 @@ class RunTestApp : public App
 {
 public:
 	explicit RunTestApp(SystemRes *res)
-	: App(res)
+	: App(res),
+	  bt(bt_config())
 	{
-		triggered = false;
 		RightAngle = false;
+		CrossRoad = false;
 		initiate = false;
 		black_count = 0;
 		avg_width = 40;
@@ -40,20 +42,38 @@ public:
 
 	void Run() override;
 private:
-	bool triggered;
 	bool RightAngle;
+	bool CrossRoad;
 	int16_t black_count;
 	int16_t avg_width;
 	bool initiate;
+	int FACTOR = 170;
+
+	int margin[60][2];
+	int midpoint[60];
 
 	bool Trigger(int32_t l_encoder_reading, int32_t r_encoder_reading);
-	bool is_error(int16_t image_row,int16_t position,bool prev);
+	bool is_error(int left, int right);
+
+	int Analyze(void);
+	void cal_midpoint(void);
+	void FindMargin(Byte* image);
+	double AvgCal(int start, int end);
+
+	void printMidpoint();
+	void printMargin();
+	JyMcuBt106 bt;
+
+	JyMcuBt106::Config bt_config(){
+		JyMcuBt106::Config config;
+		config.id = 0;
+		config.baud_rate = libbase::k60::Uart::Config::BaudRate::k115200;
+		config.rx_irq_threshold = 1;
+		config.rx_isr = true;
+		return config;
+	}
 
 
-	int16_t Analyze();
-	vector<pair<int16_t, int16_t>> midpoint();
-	void FindMargin(Byte* image, LcdTypewriter writer);
-	double AvgCal(vector<pair<int16_t, int16_t>>midpoint, int start, int end);
 
 };
 }

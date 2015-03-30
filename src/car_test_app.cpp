@@ -10,12 +10,12 @@
 #include <cstring>
 #include <memory>
 
-#include <libsc/k60/lcd_typewriter.h>
+#include <libsc/lcd_typewriter.h>
 #include <libsc/k60/led.h>
 #include <libsc/k60/ov7725.h>
-#include <libsc/k60/st7735r.h>
-#include <libsc/k60/system.h>
-#include <libsc/k60/timer.h>
+#include <libsc/st7735r.h>
+#include <libsc/system.h>
+#include <libsc/timer.h>
 #include <libutil/looper.h>
 #include <libutil/misc.h>
 #include <libutil/string.h>
@@ -24,6 +24,7 @@
 #include "system_res.h"
 #include "car_test_app.h"
 
+using namespace libsc;
 using namespace libsc::k60;
 using namespace libutil;
 using namespace std;

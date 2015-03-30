@@ -8,20 +8,21 @@
 
 #include <cstdint>
 
-#include <libsc/k60/ab_encoder.h>
-#include <libsc/k60/battery_meter.h>
-#include <libsc/k60/button.h>
-#include <libsc/k60/dir_motor.h>
-#include <libsc/k60/futaba_s3010.h>
+#include <libsc/ab_encoder.h>
+#include <libsc/battery_meter.h>
+#include <libsc/button.h>
+#include <libsc/dir_motor.h>
+#include <libsc/futaba_s3010.h>
 #include <libsc/k60/jy_mcu_bt_106.h>
 #include <libsc/k60/led.h>
 #include <libsc/k60/ov7725.h>
-#include <libsc/k60/st7735r.h>
+#include <libsc/st7735r.h>
 #include <libutil/misc.h>
 
 #include "car.h"
 
 using namespace libsc::k60;
+using namespace libsc;
 using namespace libutil;
 
 #define SERVO_MID_DEGREE 950
@@ -62,7 +63,7 @@ Ov7725::Config GetOv7725Config()
 	product.w = Car::GetCameraW();
 	product.h = Car::GetCameraH();
 	product.fps = Ov7725::Config::Fps::kLow;
-	product.contrast = 0x38;
+	product.contrast = 0x40;
 	return product;
 }
 
@@ -73,9 +74,9 @@ AbEncoder::Config GetEncoderConfig(const uint8_t id)
 	return product;
 }
 
-Joystick::Config GetJoystickConfig()
+libsc::Joystick::Config GetJoystickConfig()
 {
-	Joystick::Config product;
+	libsc::Joystick::Config product;
 	product.id = 0;
 	product.is_active_low = true;
 	return product;
@@ -88,9 +89,9 @@ St7735r::Config GetLcdConfig()
 	return product;
 }
 
-Led::Config GetLedConfig(const uint8_t id)
+libsc::Led::Config GetLedConfig(const uint8_t id)
 {
-	Led::Config product;
+	libsc::Led::Config product;
 	product.id = id;
 	return product;
 }
@@ -128,8 +129,8 @@ Car::Car()
 				AbEncoder(GetEncoderConfig(1))},
 		  m_joystick(GetJoystickConfig()),
 		  m_lcd(GetLcdConfig()),
-		  m_leds{Led(GetLedConfig(0)), Led(GetLedConfig(1)), Led(GetLedConfig(2)),
-				Led(GetLedConfig(3))},
+		  m_leds{libsc::Led(GetLedConfig(0)), libsc::Led(GetLedConfig(1)), libsc::Led(GetLedConfig(2)),
+					libsc::Led(GetLedConfig(3))},
 		  m_motors{DirMotor(GetMotorConfig(0)), DirMotor(GetMotorConfig(1))},
 		  m_servo(GetServoConfig()),
 		  m_uart(GetUartConfig())
@@ -164,6 +165,7 @@ void Car::SetTurning(const int16_t percentage)
 	const int percentage_ = libutil::Clamp<int>(-1000, percentage, 1000);
 	const int degree = SERVO_MID_DEGREE + (percentage_ * SERVO_AMPLITUDE / 1000);
 	m_servo.SetDegree(degree);
+	//m_servo.SetDegree(percentage);
 }
 
 void Car::SetButtonIsr(const uint8_t id, const Button::Config *config)
@@ -178,7 +180,7 @@ void Car::SetButtonIsr(const uint8_t id, const Button::Config *config)
 	m_buttons[id] = Button(btn_config);
 }
 
-void Car::SetJoystickIsr(const Joystick::Config *config)
+void Car::SetJoystickIsr(const libsc::Joystick::Config *config)
 {
 	auto js_config = GetJoystickConfig();
 	if (config)
@@ -189,8 +191,8 @@ void Car::SetJoystickIsr(const Joystick::Config *config)
 			js_config.listener_triggers[i] = config->listener_triggers[i];
 		}
 	}
-	m_joystick = Joystick(nullptr);
-	m_joystick = Joystick(js_config);
+	m_joystick = libsc::Joystick(nullptr);
+	m_joystick = libsc::Joystick(js_config);
 }
 
 }

@@ -8,19 +8,16 @@
 
 #pragma once
 
-#include "libsc/k60/lcd_typewriter.h"
+#include "libsc/lcd_typewriter.h"
 
 #include <utility>
 #include <vector>
 
 namespace libsc
 {
-namespace k60
-{
 
 class St7735r;
 
-}
 }
 
 namespace camera
@@ -29,7 +26,7 @@ namespace camera
 class LcdMenu
 {
 public:
-	typedef libsc::k60::St7735r Lcd;
+	typedef libsc::St7735r Lcd;
 
 	explicit LcdMenu(Lcd *lcd);
 
@@ -45,7 +42,7 @@ private:
 	void Redraw();
 
 	Lcd *m_lcd;
-	libsc::k60::LcdTypewriter m_writer;
+	libsc::LcdTypewriter m_writer;
 
 	Uint m_first;
 	Uint m_select;

@@ -9,7 +9,7 @@
 #include <libbase/k60/mcg.h>
 
 #include <libsc/lib_guard.h>
-#include <libsc/k60/system.h>
+#include <libsc/system.h>
 
 #include "car.h"
 #include "launcher.h"
@@ -37,7 +37,7 @@ int main()
 {
 	LIBSC_GUARD();
 
-	libsc::k60::System::Init();
+	libsc::System::Init();
 
 	Car car;
 	SystemRes res;

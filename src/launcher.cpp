@@ -8,11 +8,11 @@
 
 #include <functional>
 
-#include <libsc/k60/button.h>
-#include <libsc/k60/joystick.h>
-#include <libsc/k60/lcd_typewriter.h>
+#include <libsc/button.h>
+#include <libsc/joystick.h>
+#include <libsc/lcd_typewriter.h>
 #include <libsc/k60/led.h>
-#include <libsc/k60/st7735r.h>
+#include <libsc/st7735r.h>
 #include <libutil/looper.h>
 #include <libutil/misc.h>
 #include <libutil/string.h>
@@ -25,6 +25,7 @@
 #include "lcd_menu.h"
 #include "system_res.h"
 
+using namespace libsc;
 using namespace libsc::k60;
 using namespace libutil;
 

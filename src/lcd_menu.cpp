@@ -9,13 +9,14 @@
 #include <utility>
 #include <vector>
 
-#include <libsc/k60/lcd_typewriter.h>
-#include <libsc/k60/st7735r.h>
+#include <libsc/lcd_typewriter.h>
+#include <libsc/st7735r.h>
 #include <libutil/misc.h>
 
 #include "lcd_menu.h"
 
 using namespace libsc::k60;
+using namespace libsc;
 using namespace std;
 
 namespace camera
