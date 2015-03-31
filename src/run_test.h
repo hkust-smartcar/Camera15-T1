@@ -30,8 +30,8 @@ class RunTestApp : public App
 {
 public:
 	explicit RunTestApp(SystemRes *res)
-	: App(res),
-	  bt(bt_config())
+	: App(res)//,
+	  //bt(bt_config())
 	{
 		RightAngle = false;
 		CrossRoad = false;
@@ -62,18 +62,18 @@ private:
 
 	void printMidpoint();
 	void printMargin();
-	JyMcuBt106 bt;
 
-	JyMcuBt106::Config bt_config(){
-		JyMcuBt106::Config config;
-		config.id = 0;
-		config.baud_rate = libbase::k60::Uart::Config::BaudRate::k115200;
-		config.rx_irq_threshold = 1;
-		config.rx_isr = true;
-		return config;
-	}
+	int* MedianFilter(bool array_row[]);
 
-
+//	JyMcuBt106 bt;
+//
+//	JyMcuBt106::Config bt_config(){
+//		JyMcuBt106::Config config;
+//		config.id = 0;
+//		config.baud_rate = libbase::k60::Uart::Config::BaudRate::k115200;
+//		config.rx_irq_threshold = 1;
+//		return config;
+//	}
 
 };
 }
