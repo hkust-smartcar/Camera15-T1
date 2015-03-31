@@ -47,7 +47,7 @@ private:
 	int16_t black_count;
 	int16_t avg_width;
 	bool initiate;
-	int FACTOR = 170;
+	int FACTOR = 100;
 
 	int margin[60][2];
 	int midpoint[60];
@@ -63,7 +63,7 @@ private:
 	void printMidpoint();
 	void printMargin();
 
-	int* MedianFilter(bool array_row[]);
+	void MedianFilter(bool* array_row, int length);
 
 //	JyMcuBt106 bt;
 //

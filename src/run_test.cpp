@@ -113,47 +113,47 @@ void RunTestApp::Run()
 		looper.RunAfter(request, x_avg);
 			};
 	looper.RunAfter(150, x_avg);
-	//
-	//	bool no_ec_reading = car->GetEncoderCount(0)==0 && car->GetEncoderCount(1)==0;
-	//	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> motor_safety =
-	//			[&](const Timer::TimerInt request, const Timer::TimerInt)
-	//			{
-	//		car->UpdateAllEncoders();
-	//		if(no_ec_reading && (car->GetMotor(0).GetPower()>0||car->GetMotor(1).GetPower()>0)){
-	//			car->SetMotorPower(0,0);
-	//			car->SetMotorPower(1,0);
-	//		}
-	//		looper.RunAfter(request, motor_safety);
-	//			};
-	//	bool triggered = false;
-	//	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> trigger =
-	//			[&](const Timer::TimerInt request, const Timer::TimerInt)
-	//			{
-	//		if (!triggered)
-	//		{
-	//			if (Trigger(car->GetEncoderCount(0),car->GetEncoderCount(1))){
-	//				car->SetMotorPower(0,250);
-	//				car->SetMotorPower(1,250);
-	//				triggered=true;
-	//				//				looper.RunAfter(1005, motor_safety);
-	//				looper.RunAfter(3000, trigger);
-	//			}
-	//			else
-	//			{
-	//				looper.RunAfter(500, trigger);
-	//			}
-	//		}
-	//		else if (triggered){
-	//			car->SetMotorPower(0,0);
-	//			car->SetMotorPower(1,0);
-	//			triggered=false;
-	//			looper.RunAfter(2000, trigger);
-	//		}
-	//			};
-	//	looper.RunAfter(500, trigger);
 
-	//	car->SetMotorPower(0,200);
-	//	car->SetMotorPower(1,200);
+		bool no_ec_reading = car->GetEncoderCount(0)==0 && car->GetEncoderCount(1)==0;
+		std::function<void(const Timer::TimerInt, const Timer::TimerInt)> motor_safety =
+				[&](const Timer::TimerInt request, const Timer::TimerInt)
+				{
+			car->UpdateAllEncoders();
+			if(no_ec_reading && (car->GetMotor(0).GetPower()>0||car->GetMotor(1).GetPower()>0)){
+				car->SetMotorPower(0,0);
+				car->SetMotorPower(1,0);
+			}
+			looper.RunAfter(request, motor_safety);
+				};
+		bool triggered = false;
+		std::function<void(const Timer::TimerInt, const Timer::TimerInt)> trigger =
+				[&](const Timer::TimerInt request, const Timer::TimerInt)
+				{
+			if (!triggered)
+			{
+				if (Trigger(car->GetEncoderCount(0),car->GetEncoderCount(1))){
+					car->SetMotorPower(0,250);
+					car->SetMotorPower(1,250);
+					triggered=true;
+					//				looper.RunAfter(1005, motor_safety);
+					looper.RunAfter(3000, trigger);
+				}
+				else
+				{
+					looper.RunAfter(500, trigger);
+				}
+			}
+			else if (triggered){
+				car->SetMotorPower(0,0);
+				car->SetMotorPower(1,0);
+				triggered=false;
+				looper.RunAfter(2000, trigger);
+			}
+				};
+		looper.RunAfter(500, trigger);
+
+//		car->SetMotorPower(0,300);
+//		car->SetMotorPower(1,300);
 	car->GetCamera().Start();
 	looper.ResetTiming();
 	while (!car->GetButton(1).IsDown())
@@ -176,8 +176,10 @@ void RunTestApp::Run()
 
 			/*SERVO_MID_DEGREE + (percentage_ * 370 / 1000)*/
 			car->SetTurning(Analyze());
-			//printMidpoint();
-			//printMargin();
+//			car->SetMotorPower(0,);
+//			car->SetMotorPower(1,);
+			printMidpoint();
+			printMargin();
 			//char received;
 			//			bt.PeekChar(received){
 			//
@@ -200,36 +202,29 @@ bool RunTestApp::Trigger(int32_t l_encoder_reading, int32_t r_encoder_reading){
 	return false;
 }
 
-int* RunTestApp::MedianFilter(bool array_row[]){
-	Car *car = GetSystemRes()->car;
-	int* result = new int[car->GetCameraW()];
-	bool* p_array = array_row;
-	//int frame[5];
-	int count = 0;
-	result[0] = array_row[0];
-	result[1] = array_row[1];
+int Mdeian(bool* array){
+	int sort[5];
+	for(int i = 0; i < 5; i++){
+		for(int j = 0; j < 5; j++){
+			if(j > i){
+				sort[i] = array[j] < array[i] ? array[j] : array[i];
+			}
+		}
+	}
+	return sort[2];
+}
 
-	while(count*5+2 < car->GetCameraW()){
 
-		//		for(int i=0; i<5; i++){
-		//			frame[0] = *p_array;
-		//			frame[1] = *(p_array + 1);
-		//			frame[2] = *(p_array + 2);
-		//			frame[3] = *(p_array + 3);
-		//			frame[4] = *(p_array + 4);
-		//		}
-		//
-		//		result[count*5+2]=frame[2]; //median
-		int sum = *p_array+*(p_array + 1)+*(p_array + 2)+*(p_array + 3)+*(p_array + 4);
-		if(sum>=3)
-			result[count*5+2] = 1;
-		else
-			result[count*5+2] = 0;
-		p_array = p_array+1;
-
+void RunTestApp::MedianFilter(bool* array_row, int length){
+	bool* pRow = array_row;
+	int data[length];
+	for(int i = 0; i < length; i++){
+		data[i] = Mdeian(pRow++);
+	}
+	for(int i = 0; i < length; i++){
+		array_row[i] = data[i];
 	}
 
-	return result;
 }
 
 int RunTestApp::Analyze(void){
@@ -292,35 +287,38 @@ void RunTestApp::FindMargin(Byte* image){
 	}
 
 	for(Uint filter_row=0; filter_row<car->GetCameraH(); filter_row++){
-		bool* pointer = bitmap[filter_row];
-		memcpy(pointer, MedianFilter(bitmap[filter_row]), car->GetCameraW());
+
+		bool* array_ptr = bitmap[filter_row];
+		MedianFilter(array_ptr,car->GetCameraW());
+
+
 		car->GetLcd().SetRegion(libsc::Lcd::Rect(0,filter_row,car->GetCameraW(),1));
-		car->GetLcd().FillBits(0,0xff,pointer,car->GetCameraW());
+		car->GetLcd().FillBits(0,0xFFFF,array_ptr,car->GetCameraW());
 	}
 
-	int16_t row=0;
-	for(int16_t column=0; column<car->GetCameraH(); column++){
-		margin[column][0] = 0;
-		margin[column][1] = car->GetCameraW()-1;
-		bool prev = bitmap[column][row];
-		for(row=1; row<80; row++){
-			if(bitmap[column][row]!=prev){
+	int16_t column=5;
+	for(int16_t row=0; row<car->GetCameraH(); row++){
+		margin[row][0] = 5;
+		margin[row][1] = car->GetCameraW()-5;
+		bool prev = bitmap[row][5];
+		for(column=5; column<car->GetCameraW()-5; column++){
+			if(bitmap[row][column]!=prev){
 				if (prev){
 					//if(!is_error(margin[image_row][0],row))
-					margin[column][0]=row;
+					margin[row][0]=column;
 				}
 				else{
 					//if(!is_error(row,margin[image_row][1]))
-					margin[column][1]=row;
+					margin[row][1]=column;
 				}
 			}
-			prev = bitmap[column][row];
+			prev = bitmap[row][column];
 		}
 		//no color change in row, check if black row
-		if(margin[column][1]==car->GetCameraW()-1){
-			if (prev && margin[column][0]==0)
-				margin[column][1]=0;
-		}
+//		if(margin[column][1]==car->GetCameraW()-5){
+//			if (prev && margin[column][5]==0)
+//				margin[column][1]=0;
+//		}
 	}// for column
 
 }// end of function
@@ -372,10 +370,10 @@ double RunTestApp::AvgCal(int start, int end){
 	for (int i=start+1; i<end; i++){
 
 		//		if(midpoint[i]-prev>car->GetCameraW()/4 && midpoint[i]-prev<car->GetCameraW()/2){
-		//		//if(midpoint[i]!=0 && (margin[i+15][1] - margin[i][1]>car->GetCameraW()/2)){
-		//			RightAngle=true;
-		//			return 1000+i;
-		//		}
+				if(midpoint[i]!=0 && (margin[i+15][1] - margin[i][1]>car->GetCameraW()/2)){
+					RightAngle=true;
+					return 1000+i;
+				}
 		sum += midpoint[i];
 		prev=midpoint[i];
 	}
@@ -383,7 +381,7 @@ double RunTestApp::AvgCal(int start, int end){
 }
 
 void RunTestApp::cal_midpoint(void){
-	avg_width=0;
+//	avg_width=0;
 	int avg_count = 0;
 	black_count = 0;
 
@@ -393,11 +391,11 @@ void RunTestApp::cal_midpoint(void){
 		midpoint[k] = (margin[k][0]+margin[k][1])/2;
 		if (midpoint[k]==0)
 			black_count++;
-		if(margin[k][1]-margin[k][0]>0)
-			avg_width += margin[k][1]-margin[k][0];
-		avg_count++;
+//		if(margin[k][1]-margin[k][0]>0)
+//			avg_width += margin[k][1]-margin[k][0];
+//		avg_count++;
 	}
-	avg_width /= avg_count;
+//	avg_width /= avg_count;
 }
 
 void RunTestApp::printMidpoint(){
@@ -416,8 +414,6 @@ void RunTestApp::printMargin(){
 	for(Uint i=0; i<car->GetCameraH(); i++){
 		car->GetLcd().SetRegion({margin[i][0], i, 1, 1});
 		car->GetLcd().FillColor(St7735r::kBlue);
-	}
-	for(Uint i=0; i<car->GetCameraH(); i++){
 		car->GetLcd().SetRegion({margin[i][1], i, 1, 1});
 		car->GetLcd().FillColor(St7735r::kBlue);
 	}
