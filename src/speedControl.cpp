@@ -35,7 +35,7 @@ int speedControl::speedCal(Car* carpointer){
 			return carpointer->GetMotor(0).GetPower();
 	}
 	else if(carpointer->GetServo().GetDegree()>1100){
-		return 180;
+		return 350;
 	}
 	else{
 		m_prev_degree = carpointer->GetServo().GetDegree();

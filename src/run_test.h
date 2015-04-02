@@ -10,6 +10,7 @@
 
 #include "app.h"
 #include "car.h"
+#include "speedControl.h"
 #include <libsc/lcd_typewriter.h>
 #include <libutil/positional_pid_controller.h>
 #include <libsc/k60/jy_mcu_bt_106.h>
@@ -30,50 +31,53 @@ class RunTestApp : public App
 {
 public:
 	explicit RunTestApp(SystemRes *res)
-	: App(res)//,
-	  //bt(bt_config())
+	: App(res),
+	  speed(0,0,0)
 	{
 		RightAngle = false;
-		CrossRoad = false;
-		initiate = false;
+//		CrossRoad = false;
+//		initiate = false;
 		black_count = 0;
-		avg_width = 40;
+//		avg_width = 40;
+
+		for(int i=0; i<60; i++){
+			midpoint[i] = 37;
+		}
+
 	}
 
 	void Run() override;
 private:
 	bool RightAngle;
-	bool CrossRoad;
 	int16_t black_count;
-	int16_t avg_width;
-	bool initiate;
+	int white_after_black = 0;
+	int out_indicator = 0;
+
+	speedControl speed;
+
 	int FACTOR = 100;
 
 	int margin[60][2];
 	int midpoint[60];
 
-	bool Trigger(int32_t l_encoder_reading, int32_t r_encoder_reading);
-	bool is_error(int left, int right);
+	int MIDPOINT = 35;
+			//37;
 
+	bool Trigger(int32_t l_encoder_reading, int32_t r_encoder_reading);
 	int Analyze(void);
-	void cal_midpoint(void);
+	//void cal_midpoint(void);
 	void FindMargin(Byte* image);
-	double AvgCal(int start, int end);
+	double MidpointSumCal(int start, int end);
 
 	void printMidpoint();
 	void printMargin();
 
 	void MedianFilter(bool* array_row, int length);
+	bool check_going_out();
 
-//	JyMcuBt106 bt;
-//
-//	JyMcuBt106::Config bt_config(){
-//		JyMcuBt106::Config config;
-//		config.id = 0;
-//		config.baud_rate = libbase::k60::Uart::Config::BaudRate::k115200;
-//		config.rx_irq_threshold = 1;
-//		return config;
-//	}
+	//bool CrossRoad;
+	//int16_t avg_width;
+	//	bool initiate;
 
 };
 }
