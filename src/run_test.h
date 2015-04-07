@@ -10,6 +10,7 @@
 
 #include "app.h"
 #include "car.h"
+#include "ImageProcess.h"
 #include "speedControl.h"
 #include <libsc/lcd_typewriter.h>
 #include <libutil/positional_pid_controller.h>
@@ -30,21 +31,7 @@ namespace camera
 class RunTestApp : public App
 {
 public:
-	explicit RunTestApp(SystemRes *res)
-	: App(res),
-	  speed(0,0,0)
-	{
-		RightAngle = false;
-//		CrossRoad = false;
-//		initiate = false;
-		black_count = 0;
-//		avg_width = 40;
-
-		for(int i=0; i<60; i++){
-			midpoint[i] = 37;
-		}
-
-	}
+	explicit RunTestApp(SystemRes *res);
 
 	void Run() override;
 private:
@@ -53,12 +40,17 @@ private:
 	int white_after_black = 0;
 	int out_indicator = 0;
 
+	bool t = false;
+	int setpower = 220;
+	int LCDmode = 1;
+
 	speedControl speed;
+	ImageProcess imageProcess;
 
-	int FACTOR = 100;
+	int FACTOR = 105;
 
-	int margin[60][2];
-	int midpoint[60];
+//	int margin[60][2];
+//	int midpoint[60];
 
 	int MIDPOINT = 35;
 			//37;
@@ -66,13 +58,15 @@ private:
 	bool Trigger(int32_t l_encoder_reading, int32_t r_encoder_reading);
 	int Analyze(void);
 	//void cal_midpoint(void);
-	void FindMargin(Byte* image);
 	double MidpointSumCal(int start, int end);
+
+	static void Joysticklistener(const uint8_t id);
 
 	void printMidpoint();
 	void printMargin();
+	void printProcessedImage();
 
-	void MedianFilter(bool* array_row, int length);
+//	void MedianFilter(bool* array_row, int length);
 	bool check_going_out();
 
 	//bool CrossRoad;

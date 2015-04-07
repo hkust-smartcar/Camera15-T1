@@ -25,8 +25,10 @@ using namespace libsc::k60;
 using namespace libsc;
 using namespace libutil;
 
-#define SERVO_MID_DEGREE 950
-#define SERVO_AMPLITUDE 370
+
+#define SERVO_ERR 1350
+#define SERVO_MID_DEGREE 9500
+#define SERVO_AMPLITUDE 3700
 
 namespace camera
 {
@@ -37,7 +39,8 @@ namespace
 BatteryMeter::Config GetBatteryMeterConfig()
 {
 	BatteryMeter::Config product;
-	product.voltage_ratio = 0.39;
+	//product.voltage_ratio = 0.39;
+	product.voltage_ratio = 0.33;
 	return product;
 }
 
@@ -162,9 +165,9 @@ void Car::SetMotorPower(const uint8_t id, const int16_t power)
 
 void Car::SetTurning(const int16_t percentage)
 {
-	const int percentage_ = libutil::Clamp<int>(-1000, percentage, 1000);
+	const int percentage_ = libutil::Clamp<int>(-10000, percentage, 10000);
 	const int degree = SERVO_MID_DEGREE + (percentage_ * SERVO_AMPLITUDE / 1000);
-	m_servo.SetDegree(degree);
+	m_servo.SetDegree(libutil::Clamp<int>(-13500, degree+SERVO_ERR, 13500));
 	//m_servo.SetDegree(percentage);
 }
 
