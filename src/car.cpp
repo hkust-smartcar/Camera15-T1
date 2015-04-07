@@ -40,7 +40,7 @@ BatteryMeter::Config GetBatteryMeterConfig()
 {
 	BatteryMeter::Config product;
 	//product.voltage_ratio = 0.39;
-	product.voltage_ratio = 0.33;
+	product.voltage_ratio = 0.3859649f;
 	return product;
 }
 

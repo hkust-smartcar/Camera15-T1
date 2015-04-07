@@ -97,44 +97,50 @@ void ImageProcess::start(Byte* image, JyMcuBt106* bt){
 			if(!bitmap[row][WIDTH-10])
 				margin[row][1]=WIDTH-5;
 		}
+
 	}
-//	// find potential white bar from center to top & bottom
-//	int normal_row=HEIGHT/6;
-//	while(margin[normal_row][1]-margin[normal_row][0]<WIDTH/2 && normal_row<WIDTH){
-//		normal_row++;
-//	}
-//	int l_slope = abs(margin[normal_row+1][0] - margin[normal_row][0]);
-//	int r_slope = abs(margin[normal_row+1][1] - margin[normal_row][1]);
-//
-//	for(int i= HEIGHT/2; i>0; i--){
-//
-//		if (margin[i+1][1]-margin[i][0]>WIDTH/2){
-//			if(margin[i+1][0]-l_slope>5)
-//				margin[i][0]=margin[i+1][0]+l_slope;
-//			else
-//				margin[i][0]=5;
-//			if(margin[i+1][1]+r_slope<WIDTH-5)
-//				margin[i][1]=margin[i+1][1]-r_slope;
-//			else
-//				margin[i][1]= WIDTH-5;
-//		}
-//	}
-//	for(int j= HEIGHT/2; j<HEIGHT; j++){
-//
-//		if (margin[j][1]-margin[j][0]>WIDTH/2){
-//			if(margin[j-1][0]+l_slope>5)
-//				margin[j][0]=margin[j-1][0]-l_slope;
-//			else
-//				margin[j][0]=margin[j-1][0]=5;
-//			if(margin[j+1][1]-r_slope<WIDTH-5)
-//				margin[j][1]=margin[j-1][1]+r_slope;
-//			else
-//				margin[j][1]=WIDTH-5;
-//
-//		}
-//
-//	}
-//
+
+	for(int k=0; k<HEIGHT; k++){
+		midpoint[k] = (margin[k][0]+margin[k][1])/2;
+	}
+
+	//	// find potential white bar from center to top & bottom
+	//	int normal_row=HEIGHT/6;
+	//	while(margin[normal_row][1]-margin[normal_row][0]<WIDTH/2 && normal_row<WIDTH){
+	//		normal_row++;
+	//	}
+	//	int l_slope = abs(margin[normal_row+1][0] - margin[normal_row][0]);
+	//	int r_slope = abs(margin[normal_row+1][1] - margin[normal_row][1]);
+	//
+	//	for(int i= HEIGHT/2; i>0; i--){
+	//
+	//		if (margin[i+1][1]-margin[i][0]>WIDTH/2){
+	//			if(margin[i+1][0]-l_slope>5)
+	//				margin[i][0]=margin[i+1][0]+l_slope;
+	//			else
+	//				margin[i][0]=5;
+	//			if(margin[i+1][1]+r_slope<WIDTH-5)
+	//				margin[i][1]=margin[i+1][1]-r_slope;
+	//			else
+	//				margin[i][1]= WIDTH-5;
+	//		}
+	//	}
+	//	for(int j= HEIGHT/2; j<HEIGHT; j++){
+	//
+	//		if (margin[j][1]-margin[j][0]>WIDTH/2){
+	//			if(margin[j-1][0]+l_slope>5)
+	//				margin[j][0]=margin[j-1][0]-l_slope;
+	//			else
+	//				margin[j][0]=margin[j-1][0]=5;
+	//			if(margin[j+1][1]-r_slope<WIDTH-5)
+	//				margin[j][1]=margin[j-1][1]+r_slope;
+	//			else
+	//				margin[j][1]=WIDTH-5;
+	//
+	//		}
+	//
+	//	}
+	//
 
 
 
