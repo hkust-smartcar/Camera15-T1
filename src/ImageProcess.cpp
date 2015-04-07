@@ -65,10 +65,20 @@ void ImageProcess::start(Byte* image, JyMcuBt106* bt){
 
 	// start image processing
 	// go through each row, if find all white, guess its margin
-	int l_difference = 0;
-	int r_difference = 0;
+	//	int l_difference = 0;
+	//	int r_difference = 0;
 
-	int mark =0; // mark last row with no data to compare with
+	//	int mark =0; // mark last row with no data to compare with
+
+	//for crossroad
+	int left_start = 0;
+	int left_end = 0;
+
+	int right_start = 0;
+	int right_end = 0;
+
+	bool l_started = false;
+	bool r_started = false;
 
 	for(int16_t row=0; row<HEIGHT; row++){
 		margin[row][0] = 5;
@@ -98,11 +108,72 @@ void ImageProcess::start(Byte* image, JyMcuBt106* bt){
 				margin[row][1]=WIDTH-5;
 		}
 
+		if(row!=0 && abs(margin[row][0]-margin[row-1][0])>WIDTH/3*2){
+			if(!l_started)
+				left_start = l_curr;
+			else
+				left_end = l_curr;
+		}
+
+		if(row!=0 && abs(margin[row][1]-margin[row-1][1])>WIDTH/3*2){
+			if(!r_started)
+				right_start = r_curr;
+			else
+				right_end = r_curr;
+		}
+
+	}
+
+	//fix cross road
+	//case 1: straight
+	if(abs(margin[l_started][0]-margin[l_started-1][0])-abs(margin[r_started][1]-margin[r_started-1][1])<3){
+
+	}
+	//case 2: not straight
+	else{
+
 	}
 
 	for(int k=0; k<HEIGHT; k++){
 		midpoint[k] = (margin[k][0]+margin[k][1])/2;
 	}
+
+	//	//find cross road
+	//	int l_prev = margin[HEIGHT][0];
+	//	int r_prev = margin[HEIGHT][1];
+	//
+	//	int left_start = 0;
+	//	int left_end = 0;
+	//
+	//	int right_start = 0;
+	//	int right_end = 0;
+	//
+	//	bool l_started = false;
+	//	bool r_started = false;
+	//
+	//
+	//	for(int c=HEIGHT-1; c>0; c--){
+	//		l_curr = margin[c][0];
+	//		r_curr = margin[c][1];
+	//
+	//		//find sudden change on edge
+	//		if(abs(l_prev-l_curr)>WIDTH/3*2){
+	//			if(!l_started)
+	//				left_start = l_curr;
+	//			else
+	//				left_end = l_curr;
+	//		}
+	//
+	//		if (abs(r_prev-r_curr)>WIDTH/3*2){
+	//			if(!r_started)
+	//				right_start = r_curr;
+	//			else
+	//				right_end = r_curr;
+	//		}
+	//	}
+
+
+
 
 	//	// find potential white bar from center to top & bottom
 	//	int normal_row=HEIGHT/6;
