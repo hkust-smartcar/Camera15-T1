@@ -22,8 +22,12 @@ namespace camera
 class ImageProcess{
 public:
 	ImageProcess();
-	void start(Byte* image, JyMcuBt106* bt);
-	void MedianFilter(bool* array_row, int length);
+	void start(Byte* image);
+//	void fill_line(int side, int m, int s_x, int s_y, int e_y);
+//	void MedianFilter(bool* array_row, int length);
+
+	int Analyze(void);
+	double MidpointSumCal(int start, int end);
 
 	~ImageProcess()
 	{}
@@ -31,8 +35,17 @@ public:
 	bool bitmap[60][80];
 	int margin[60][2];
 	int midpoint[60];
-	int MIDPOINT = 40;
-	int black_until=0;
+	int MIDPOINT = 37;
+//	int black_until=0;
+
+	int16_t black_count = 0;
+	int16_t white_count = 0;
+	int FACTOR = 94;
+
+	bool Q = false;
+	bool crossroad = false;
+	bool l_byebye = false;
+	bool r_byebye = false;
 };
 }
 

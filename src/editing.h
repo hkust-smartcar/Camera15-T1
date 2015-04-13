@@ -24,7 +24,6 @@
 using namespace std;
 using namespace libsc::k60;
 
-
 namespace camera
 {
 
@@ -35,17 +34,12 @@ public:
 
 	void Run() override;
 private:
-	int16_t black_count;
 
 	bool t = false;
-	int setpower = 240;
+	int setpower = 300;
 
 	ImageProcess imageProcess;
-
-	int FACTOR = 100;
-
-	int Analyze(void);
-	double MidpointSumCal(int start, int end);
+	speedControl speed;
 
 	void printMidpoint();
 	void printMargin();

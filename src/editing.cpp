@@ -40,9 +40,9 @@ RunTestApp *m_instance;
 
 RunTestApp::RunTestApp(SystemRes *res)
 : App(res),
-  imageProcess()
+  imageProcess(),
+  speed(0,0,0)
 {
-	black_count = 0;
 	m_instance = this;
 
 }
@@ -110,7 +110,7 @@ void RunTestApp::Run()
 		car->GetLcd().SetRegion({0, 144, St7735r::GetW(),
 			LcdTypewriter::GetFontH()});
 		writer.WriteString(String::Format("%ld\n",
-				Analyze()/FACTOR).c_str());
+				imageProcess.Analyze()/imageProcess.FACTOR).c_str());
 		looper.RunAfter(request, x_avg);
 			};
 	looper.RunAfter(150, x_avg);
@@ -122,8 +122,11 @@ void RunTestApp::Run()
 		if (!triggered)
 		{
 			if(t){
-				car->SetMotorPower(0,setpower);
-				car->SetMotorPower(1,setpower);
+//				car->SetMotorPower(0,setpower);
+//				car->SetMotorPower(1,setpower);
+				car->SetMotorPower(0,speed.speedCal(car,setpower));
+				car->SetMotorPower(1,speed.speedCal(car,setpower));
+
 				triggered=true;
 				looper.RunAfter(2000, trigger);
 			}
@@ -151,12 +154,16 @@ void RunTestApp::Run()
 			memcpy(image2.get(), car->GetCamera().LockBuffer(), image_size);
 			car->GetCamera().UnlockBuffer();
 
-			//			car->SetMotorPower(0,setpower);
-			//			car->SetMotorPower(1,setpower);
+//						car->SetMotorPower(0,setpower);
+//						car->SetMotorPower(1,setpower);
 
-			imageProcess.start(image2.get(), &car->GetUart());
+			imageProcess.start(image2.get());
 
-			car->SetTurning(Analyze());
+			car->SetTurning(imageProcess.Analyze());
+
+			if (imageProcess.crossroad && abs(car->GetServo().GetDegree()-9500)<10){
+				car->SetTurning(0);
+			}
 
 			printMidpoint();
 			printMargin();
@@ -170,18 +177,18 @@ void RunTestApp::Run()
 				else if(received == 'e')
 					t = true;
 				else if(received == 'f'){
-					car->SetMotorPower(0,setpower);
-					car->SetMotorPower(1,setpower);
+					car->SetMotorPower(0,speed.speedCal(car,setpower));
+					car->SetMotorPower(1,speed.speedCal(car,setpower));
 				}
 				else if (received == 'g'){
 					car->SetMotorPower(0,0);
 					car->SetMotorPower(1,0);
 				}
 				else if (received == 'i'){
-					FACTOR+=5;
+					imageProcess.FACTOR++;
 				}
 				else if (received == 'j'){
-					FACTOR-=5;
+					imageProcess.FACTOR--;
 				}
 				else if (received == 's'){
 					setpower+=10;
@@ -189,53 +196,25 @@ void RunTestApp::Run()
 				else if (received == 't'){
 					setpower-=10;
 				}
+				else if (received == 'y'){
+					car->SetMotorPower(0,-180);
+					car->SetMotorPower(1,-180);
+				}
 			}
+//			char buffer[100];
+//			sprintf(buffer,"MIDPOINT at %d\n",imageProcess.MIDPOINT);
+//			car->GetUart().SendStr(buffer);
 
+
+
+			char info[100]; //Q: %d\nCross: %d\n , (int)imageProcess.Q, (int)imageProcess.crossroad
+			sprintf(info, "FACTOR: %d\nPOWER: %d\n", imageProcess.FACTOR, setpower);
+			car->GetUart().SendStr(info);
 
 		}
 		looper.Once();
 	}
 	car->GetCamera().Stop();
-}
-
-double MultiplyRatio(double err, int FACTOR){
-
-	if(err>15 || err<-15){
-		return err*(FACTOR*1.3);
-	}
-	else if (err>10 || err <-10){
-		return err*(FACTOR*0.7);
-	}
-	else{
-		return err*FACTOR;
-	}
-}
-
-int RunTestApp::Analyze(void){
-
-	double error = imageProcess.MIDPOINT - MidpointSumCal(30,40)/10;
-
-	return MultiplyRatio(error, FACTOR);
-}
-
-double RunTestApp::MidpointSumCal(int start, int end){
-	Car *car = GetSystemRes()->car;
-	double sum = 0;
-
-	for(int k=start; k<end; k++){
-		black_count = 0;
-
-		if (imageProcess.midpoint[k]==0)
-			black_count++;
-
-		if (imageProcess.margin[k][0] == 5 && imageProcess.margin[k][1] == car->GetCameraW()-5){
-			return 10*(imageProcess.midpoint[k]=(imageProcess.midpoint[k+5]+imageProcess.midpoint[k+4]+imageProcess.midpoint[k+3]+imageProcess.midpoint[k+2]+imageProcess.midpoint[k+1])/5);
-		}
-
-		sum += imageProcess.midpoint[k];
-	}
-
-	return sum;
 }
 
 void RunTestApp::printMidpoint(){
@@ -253,7 +232,7 @@ void RunTestApp::printMidpoint(){
 		car->GetLcd().FillColor(St7735r::kCyan);
 	}
 
-	for(Uint i=0; i<60; i++){
+	for(Uint i=30; i<40; i++){
 		car->GetLcd().SetRegion({imageProcess.midpoint[i], i, 1, 1});
 		car->GetLcd().FillColor(St7735r::kRed);
 	}

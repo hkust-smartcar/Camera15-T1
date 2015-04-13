@@ -25,21 +25,23 @@ speedControl::speedControl(float kp, float ki, float kd)
 speedControl::~speedControl()
 {}
 
-int speedControl::speedCal(Car* carpointer){
+int speedControl::speedCal(Car* carpointer, int power){
 
-	if (abs(carpointer->GetServo().GetDegree()-950)<8){
-		m_prev_degree = carpointer->GetServo().GetDegree();
-		if (carpointer->GetMotor(0).GetPower()+10 < 1000)
-			return carpointer->GetMotor(0).GetPower()+10;
-		else
-			return carpointer->GetMotor(0).GetPower();
-	}
-	else if(carpointer->GetServo().GetDegree()>1100){
-		return 350;
+//	if (abs(carpointer->GetServo().GetDegree()-9500)<80){
+//		m_prev_degree = carpointer->GetServo().GetDegree();
+//		if (carpointer->GetMotor(0).GetPower()+10 < 1000)
+//			return carpointer->GetMotor(0).GetPower()+10;
+//		else
+//			return carpointer->GetMotor(0).GetPower();
+//	}
+//	else
+//
+	if(abs(carpointer->GetServo().GetDegree())>10050 && abs(carpointer->GetServo().GetDegree())<10060){
+		return power*0.6;
 	}
 	else{
 		m_prev_degree = carpointer->GetServo().GetDegree();
-		return 300;
+		return power;
 	}
 }
 

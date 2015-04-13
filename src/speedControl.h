@@ -24,7 +24,7 @@ public:
 	speedControl(float kp, float ki, float kd);
 	~speedControl();
 
-	int speedCal(Car* carpointer);
+	int speedCal(Car* carpointer, int power);
 
 private:
 	int32_t m_prev_error;

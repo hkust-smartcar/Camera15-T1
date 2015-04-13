@@ -167,7 +167,7 @@ void Car::SetTurning(const int16_t percentage)
 {
 	const int percentage_ = libutil::Clamp<int>(-10000, percentage, 10000);
 	const int degree = SERVO_MID_DEGREE + (percentage_ * SERVO_AMPLITUDE / 1000);
-	m_servo.SetDegree(libutil::Clamp<int>(-13500, degree+SERVO_ERR, 13500));
+	m_servo.SetDegree(libutil::Clamp<int>(-13500, degree, 13500));
 	//m_servo.SetDegree(percentage);
 }
 

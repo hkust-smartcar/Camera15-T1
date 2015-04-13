@@ -19,32 +19,24 @@ ImageProcess::ImageProcess()
 	}
 }
 
-int Median(bool* array){
-	int sort[9];
-	for(int i = 0; i < 9; i++){
-		for(int j = 0; j < 9; j++){
-			if(j > i){
-				sort[i] = array[j] < array[i] ? array[j] : array[i];
-			}
-		}
-	}
-	return sort[5];
-}
+void ImageProcess::start(Byte* image){
 
+	//initiation
+	//for cross road
+	white_count = 0;
+	crossroad = false;
+	int start_row = 0;
+	int end_row = WIDTH;
+	bool detected = false;
+	//for Q
+	Q = false;
+	black_count = 0;
+	//for going out
+	l_byebye = false;
+	r_byebye = false;
+	int l_going_out = 0;
+	int r_going_out = 0;
 
-void ImageProcess::MedianFilter(bool* array_row, int length){
-	bool* pRow = array_row;
-	int data[length];
-	for(int i = 0; i < length; i++){
-		data[i] = Median(pRow++);
-	}
-	for(int i = 0; i < length; i++){
-		array_row[i] = data[i];
-	}
-
-}
-
-void ImageProcess::start(Byte* image, JyMcuBt106* bt){
 	//convert to bits
 	for(int16_t image_row=0; image_row<HEIGHT; image_row++){
 		for(int16_t byte=0; byte<10; byte++){
@@ -56,45 +48,24 @@ void ImageProcess::start(Byte* image, JyMcuBt106* bt){
 			}
 		}
 	}
-	//	//filter noise
-	//	for(Uint filter_row=0; filter_row<HEIGHT; filter_row++){
-	//
-	//		bool* array_ptr = bitmap[filter_row];
-	//		MedianFilter(array_ptr,WIDTH);
-	//	}
 
 	// start image processing
-	// go through each row, if find all white, guess its margin
-	//	int l_difference = 0;
-	//	int r_difference = 0;
-
-	//	int mark =0; // mark last row with no data to compare with
-
-	//for crossroad
-	int left_start = 0;
-	int left_end = 0;
-
-	int right_start = 0;
-	int right_end = 0;
-
-	bool l_started = false;
-	bool r_started = false;
-
 	for(int16_t row=0; row<HEIGHT; row++){
-		margin[row][0] = 5;
+
+		margin[row][0] = 0;
 		bool l_prev = bitmap[row][midpoint[row]];
 
-		margin[row][1] = 5;
+		margin[row][1] = 0;
 		bool r_prev = bitmap[row][midpoint[row]];
 
-		for(int l_column= midpoint[row]; l_column>5 ; l_column--){
+		for(int l_column= midpoint[row]; l_column>0 ; l_column--){
 			if(bitmap[row][l_column]!=l_prev && !l_prev){
 				margin[row][0]=l_column;
 				break;
 			}
 			l_prev = bitmap[row][l_column];
 		}
-		for(int r_column=midpoint[row]; r_column<WIDTH-5; r_column++){
+		for(int r_column=midpoint[row]; r_column<WIDTH; r_column++){
 			if(bitmap[row][r_column]!=r_prev && !r_prev){
 				margin[row][1]=r_column;
 				break;
@@ -102,188 +73,148 @@ void ImageProcess::start(Byte* image, JyMcuBt106* bt){
 			r_prev = bitmap[row][r_column];
 		}
 		//if no right margin for this row
-		if(margin[row][1]==5){
+		if(margin[row][1]==0){
 			//if it's white (all pixels are false)
-			if(!bitmap[row][WIDTH-10])
-				margin[row][1]=WIDTH-5;
+			if(!bitmap[row][WIDTH-10]){
+				margin[row][1]=WIDTH;
+			}
+
+		}
+		//check black row
+		if(abs(margin[row][1]-margin[row][0])<10)
+			black_count++;
+
+		//check going out
+		if(margin[row][0]>MIDPOINT){
+			l_going_out++;
 		}
 
-		if(row!=0 && abs(margin[row][0]-margin[row-1][0])>WIDTH/3*2){
-			if(!l_started)
-				left_start = l_curr;
-			else
-				left_end = l_curr;
+		if (margin[row][1]<MIDPOINT){
+			r_going_out++;
 		}
 
-		if(row!=0 && abs(margin[row][1]-margin[row-1][1])>WIDTH/3*2){
-			if(!r_started)
-				right_start = r_curr;
-			else
-				right_end = r_curr;
+		// check for sudden change of edge
+		if(row>3 && (abs(margin[row][0]-margin[row-3][0])>WIDTH/6 && abs(margin[row][1]-margin[row-3][1])>WIDTH/6)){
+			// mark start & end
+			if(!detected){
+				start_row = row;
+				detected = true;
+			}
+			else{
+				end_row = row;
+				detected = false;
+			}
+		}
+		if(end_row<start_row){
+			end_row = HEIGHT;
 		}
 
 	}
 
-	//fix cross road
-	//case 1: straight
-	if(abs(margin[l_started][0]-margin[l_started-1][0])-abs(margin[r_started][1]-margin[r_started-1][1])<3){
-
-	}
-	//case 2: not straight
-	else{
-
+	//for row between suspected cross road
+	for(int r=start_row; r<end_row; r++){
+		//check white across width
+		if(abs(margin[r][1]-margin[r][0])>WIDTH-10)
+			white_count++;
 	}
 
+	//check Q
+	//find first white row
+	int white_start = start_row;
+	while(!(abs(margin[white_start][1]-margin[white_start][0])>WIDTH-10) && white_start<end_row){
+		white_start++;
+	}
+	//find last black row
+	int black_end = 0;
+	for(int black = white_start; black>0; black--){
+		//count black pixels in row
+		int black_pixel =0;
+		for(int bp=0; bp<WIDTH; bp++){
+			if(bitmap[black][bp])
+				black_pixel++;
+		}
+		//if black > threshold, consider as black row
+		if(black_pixel>WIDTH*3/4){
+			black_end = black;
+			break;
+		}
+	}
+	//if distance between last black row & first white row < threshold, consider as Q
+	// or black count > threshold, consider as Q
+	if(abs(black_end-white_start)<HEIGHT/8 || black_count>HEIGHT/3){
+		Q = true;
+	}
+	//ensure there are few rows of white
+	else if(white_count >HEIGHT/12 && white_count <HEIGHT/2){
+		crossroad = true;
+	}
+
+	//going out if going_out > threshold
+	if (l_going_out>HEIGHT*2/3){
+		l_byebye = true;
+	}
+	if(r_going_out>HEIGHT*2/3){
+		r_byebye = true;
+	}
+
+	//calculate midpoint
 	for(int k=0; k<HEIGHT; k++){
 		midpoint[k] = (margin[k][0]+margin[k][1])/2;
 	}
 
-	//	//find cross road
-	//	int l_prev = margin[HEIGHT][0];
-	//	int r_prev = margin[HEIGHT][1];
-	//
-	//	int left_start = 0;
-	//	int left_end = 0;
-	//
-	//	int right_start = 0;
-	//	int right_end = 0;
-	//
-	//	bool l_started = false;
-	//	bool r_started = false;
-	//
-	//
-	//	for(int c=HEIGHT-1; c>0; c--){
-	//		l_curr = margin[c][0];
-	//		r_curr = margin[c][1];
-	//
-	//		//find sudden change on edge
-	//		if(abs(l_prev-l_curr)>WIDTH/3*2){
-	//			if(!l_started)
-	//				left_start = l_curr;
-	//			else
-	//				left_end = l_curr;
-	//		}
-	//
-	//		if (abs(r_prev-r_curr)>WIDTH/3*2){
-	//			if(!r_started)
-	//				right_start = r_curr;
-	//			else
-	//				right_end = r_curr;
-	//		}
-	//	}
-
-
-
-
-	//	// find potential white bar from center to top & bottom
-	//	int normal_row=HEIGHT/6;
-	//	while(margin[normal_row][1]-margin[normal_row][0]<WIDTH/2 && normal_row<WIDTH){
-	//		normal_row++;
-	//	}
-	//	int l_slope = abs(margin[normal_row+1][0] - margin[normal_row][0]);
-	//	int r_slope = abs(margin[normal_row+1][1] - margin[normal_row][1]);
-	//
-	//	for(int i= HEIGHT/2; i>0; i--){
-	//
-	//		if (margin[i+1][1]-margin[i][0]>WIDTH/2){
-	//			if(margin[i+1][0]-l_slope>5)
-	//				margin[i][0]=margin[i+1][0]+l_slope;
-	//			else
-	//				margin[i][0]=5;
-	//			if(margin[i+1][1]+r_slope<WIDTH-5)
-	//				margin[i][1]=margin[i+1][1]-r_slope;
-	//			else
-	//				margin[i][1]= WIDTH-5;
-	//		}
-	//	}
-	//	for(int j= HEIGHT/2; j<HEIGHT; j++){
-	//
-	//		if (margin[j][1]-margin[j][0]>WIDTH/2){
-	//			if(margin[j-1][0]+l_slope>5)
-	//				margin[j][0]=margin[j-1][0]-l_slope;
-	//			else
-	//				margin[j][0]=margin[j-1][0]=5;
-	//			if(margin[j+1][1]-r_slope<WIDTH-5)
-	//				margin[j][1]=margin[j-1][1]+r_slope;
-	//			else
-	//				margin[j][1]=WIDTH-5;
-	//
-	//		}
-	//
-	//	}
-	//
-
-
-
-
-
-	//
-	//		//calculate x difference between rows
-	//		if(row <= 1){
-	//			l_difference = 0;
-	//			r_difference = 0;
-	//		}
-	//		else {
-	//			l_difference = margin[row-1][0]-margin[row-2][0];
-	//			r_difference = margin[row-1][1]-margin[row-2][1];
-	//		}
-	//
-	//		//if its width > threshold -> cross
-	//		if(margin[row][1]-margin[row][0]>WIDTH/3*2){
-	//			//record row that can't be compare
-	////			if(l_difference==0 && r_difference==0){
-	////				mark = row;
-	////			}
-	//			//guess margin
-	//			if (row>0){
-	//				if(margin[row-1][0]-l_difference>5)
-	//					margin[row][0]=margin[row-1][0]-l_difference;
-	//				else
-	//					margin[row][0] = 5;
-	//
-	//				if(margin[row-1][1]+r_difference<WIDTH-5)
-	//					margin[row][1]=margin[row-1][1]+r_difference;
-	//				else
-	//					margin[row][1] = WIDTH-5;
-	//			}
-	//
-	//		char buffer[100];
-	//			sprintf(buffer,"left margin at row %d = %d\n right margin at row %d = %d\n",row,margin[row][0],row,margin[row][1]);
-	//			bt->SendStr(buffer);
-	//
-	//	}// for row
-	//
-	//	//double check for white row
-	//	if(mark>0){
-	//		for(int x=mark; x>0; x--){
-	//			l_difference = (abs(margin[x+5][0] - margin[x+4][0])+(margin[x+4][0] - margin[x+3][0])+(margin[x+3][0] - margin[x+2][0])+(margin[x+2][0] - margin[x+1][0]))/4;
-	//			r_difference = (abs(margin[x+5][1] - margin[x+4][1])+(margin[x+4][1] - margin[x+3][1])+(margin[x+3][1] - margin[x+2][1])+(margin[x+2][1] - margin[x+1][1]))/4;
-	//
-	//			if(margin[x-1][0]-l_difference>5)
-	//				margin[x][0]=margin[x-1][0]-l_difference;
-	//			else
-	//				margin[x][0] = 5;
-	//
-	//			if(margin[x-1][1]+r_difference<WIDTH-5)
-	//				margin[x][1]=margin[x-1][1]+r_difference;
-	//			else
-	//				margin[x][1] = WIDTH-5;
-	//		}
-	//	}
-	//	black_until=0;
-	//	//filter out nearby tracks
-	//	for(int y=0; y<HEIGHT; y++){
-	//		//if it's black row
-	//		if(margin[y][1]==5)
-	//			black_until = y;
-	//	}
-	//	//line before last black line become black
-	//	for(int turn_bk=black_until; turn_bk>0; turn_bk--){
-	//		margin[turn_bk][0] = 5;
-	//		margin[turn_bk][1] = 5;
-	//	}
 }
 
+double ImageProcess::MidpointSumCal(int start, int end){
+	double sum = 0;
+
+	for(int k=start; k<end; k++){
+
+		//		if (imageProcess.margin[k][0] == 0 && imageProcess.margin[k][1] == car->GetCameraW()){
+		//			return 10*(imageProcess.midpoint[k]=(imageProcess.midpoint[k+5]+imageProcess.midpoint[k+4]+imageProcess.midpoint[k+3]+imageProcess.midpoint[k+2]+imageProcess.midpoint[k+1])/5);
+		//		}
+
+		sum += midpoint[k];
+	}
+
+	return sum;
 }
+
+double MultiplyRatio(double err, int FACTOR){
+
+	if(err>10 || err<-10){
+		return err*(FACTOR*1.3);
+	}
+	else if (err>5 || err <-5){
+		return err*(FACTOR*0.8);
+	}
+	else{
+		return err*FACTOR;
+	}
+}
+
+int ImageProcess::Analyze(void){
+
+	double error = MIDPOINT - MidpointSumCal(28,38)/10;
+
+	if(r_byebye)
+		return 10000;
+	else if(l_byebye)
+		return -10000;
+	else if ((error>2||error<-2) && !crossroad)
+		return MultiplyRatio(error, FACTOR);
+	else
+		return 0;
+}
+
+//void ImageProcess::fill_line(int side, int m, int s_x, int s_y, int e_y){
+//	for(int i=s_y; i<e_y; i++){
+//		margin[i][side] = (i-s_y + m*s_x) / m;
+//	}
+//	filled = true;
+//}
+
+
+}
+
 
 
