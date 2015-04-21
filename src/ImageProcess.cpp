@@ -201,7 +201,8 @@ int ImageProcess::Analyze(void){
 	else if(l_byebye)
 		return -10000;
 	else if ((error>2||error<-2) && !crossroad)
-		return MultiplyRatio(error, FACTOR);
+		//return MultiplyRatio(error, FACTOR);
+		return error;
 	else
 		return 0;
 }

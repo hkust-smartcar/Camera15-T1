@@ -40,7 +40,7 @@ public:
 
 	int16_t black_count = 0;
 	int16_t white_count = 0;
-	int FACTOR = 94;
+	int FACTOR = 90;
 
 	bool Q = false;
 	bool crossroad = false;

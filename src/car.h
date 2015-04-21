@@ -21,6 +21,8 @@
 #include <libsc/k60/ov7725.h>
 #include <libsc/st7735r.h>
 
+#include "MyVarManager.h"
+
 namespace camera
 {
 
@@ -107,10 +109,10 @@ public:
 		return m_servo;
 	}
 
-	libsc::k60::JyMcuBt106& GetUart()
-	{
-		return m_uart;
-	}
+//	libsc::k60::JyMcuBt106& GetUart()
+//	{
+//		return m_uart;
+//	}
 
 	/**
 	 * Set interrupt for the button, effectively it will reinit the button. Only
@@ -133,6 +135,8 @@ public:
 	 */
 	void SetJoystickIsr(const libsc::Joystick::Config *config);
 
+	void SetUartIsr(const libsc::k60::UartDevice::OnReceiveListener &isr);
+
 	static constexpr int GetCameraW()
 	{
 		return 80;
@@ -153,7 +157,7 @@ private:
 	libsc::Led m_leds[4];
 	libsc::DirMotor m_motors[2];
 	libsc::FutabaS3010 m_servo;
-	libsc::k60::JyMcuBt106 m_uart;
+//	libsc::k60::JyMcuBt106 m_uart;
 };
 
 }

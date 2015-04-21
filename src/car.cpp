@@ -135,8 +135,8 @@ Car::Car()
 		  m_leds{libsc::Led(GetLedConfig(0)), libsc::Led(GetLedConfig(1)), libsc::Led(GetLedConfig(2)),
 					libsc::Led(GetLedConfig(3))},
 		  m_motors{DirMotor(GetMotorConfig(0)), DirMotor(GetMotorConfig(1))},
-		  m_servo(GetServoConfig()),
-		  m_uart(GetUartConfig())
+		  m_servo(GetServoConfig())
+//		  m_uart(GetUartConfig())
 {
 	m_servo.SetDegree(SERVO_MID_DEGREE);
 }
@@ -197,5 +197,10 @@ void Car::SetJoystickIsr(const libsc::Joystick::Config *config)
 	m_joystick = libsc::Joystick(nullptr);
 	m_joystick = libsc::Joystick(js_config);
 }
+
+//void Car::SetUartIsr(const UartDevice::OnReceiveListener &isr)
+//{
+//	m_uart.SetRxIsr(isr);
+//}
 
 }
