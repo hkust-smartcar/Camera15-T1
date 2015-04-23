@@ -117,10 +117,10 @@ int SD::radius_mode(int encoder, char side , int degree)
 		{
 			de = degree;
 		}
-		float radius = 2000/(de);
+		float radius = 2600/(de);
 
 
-		if(degree < 0)
+		if((degree * direction) < 0)
 		{
 
 			leftencoder = (((tan.ArcTan((((radius-(car_width/2))/(float)radius))) * 4)/(3.14159265359)) * encoder);
@@ -156,9 +156,9 @@ int SD::radius_mode(int encoder, char side , int degree)
 		{
 			de = degree;
 		}
-		float radius = 2000/(de);
+		float radius = 2600/(de);
 
-		if(degree < 0)
+		if((degree * direction) < 0)
 		{
 
 			rightencoder = (((tan.ArcTan((((radius+(car_width/2))/(float)radius))) * 4)/(3.14159265359)) * encoder);

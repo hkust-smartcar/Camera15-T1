@@ -19,8 +19,7 @@
 
 #include "car.h"
 #include "car_test_app.h"
-//#include "run_test.h"
-#include "editing.h"
+#include "run_test.h"
 
 #include "launcher.h"
 #include "lcd_menu.h"

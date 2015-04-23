@@ -18,13 +18,15 @@ to specific some kind of parameters like the maximum angle can turn and the toe_
 #define Angle_Mode 1
 #define Road_Mode 2
 
+#define direction -1  // reverse the direction (need to input 1 or -1 as 0 will trigger errors)
+
 
 
 #define mode Radius_Mode
 
 //For all mode, used to calculate something
 #define car_width 14
-#define maxium_turning_angle 60 //the angle is respect to the length of the car
+#define maxium_turning_angle 42 //the angle is respect to the length of the car
 
 
 //Just for Angle_Mode only for precise calculation

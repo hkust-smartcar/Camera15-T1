@@ -164,21 +164,18 @@ void ImageProcess::start(Byte* image){
 
 }
 
+//calculate sum of midpoint in [start, end]
 double ImageProcess::MidpointSumCal(int start, int end){
 	double sum = 0;
 
 	for(int k=start; k<end; k++){
-
-		//		if (imageProcess.margin[k][0] == 0 && imageProcess.margin[k][1] == car->GetCameraW()){
-		//			return 10*(imageProcess.midpoint[k]=(imageProcess.midpoint[k+5]+imageProcess.midpoint[k+4]+imageProcess.midpoint[k+3]+imageProcess.midpoint[k+2]+imageProcess.midpoint[k+1])/5);
-		//		}
-
 		sum += midpoint[k];
 	}
 
 	return sum;
 }
 
+//For larger error, multiply larger FACTOR, vice versa
 double MultiplyRatio(double err, int FACTOR){
 
 	if(err>10 || err<-10){
@@ -192,6 +189,7 @@ double MultiplyRatio(double err, int FACTOR){
 	}
 }
 
+//decide what result to return
 int ImageProcess::Analyze(void){
 
 	double error = MIDPOINT - MidpointSumCal(28,38)/10;
@@ -206,13 +204,6 @@ int ImageProcess::Analyze(void){
 	else
 		return 0;
 }
-
-//void ImageProcess::fill_line(int side, int m, int s_x, int s_y, int e_y){
-//	for(int i=s_y; i<e_y; i++){
-//		margin[i][side] = (i-s_y + m*s_x) / m;
-//	}
-//	filled = true;
-//}
 
 
 }

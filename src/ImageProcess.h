@@ -23,8 +23,6 @@ class ImageProcess{
 public:
 	ImageProcess();
 	void start(Byte* image);
-//	void fill_line(int side, int m, int s_x, int s_y, int e_y);
-//	void MedianFilter(bool* array_row, int length);
 
 	int Analyze(void);
 	double MidpointSumCal(int start, int end);
@@ -36,7 +34,6 @@ public:
 	int margin[60][2];
 	int midpoint[60];
 	int MIDPOINT = 37;
-//	int black_until=0;
 
 	int16_t black_count = 0;
 	int16_t white_count = 0;
