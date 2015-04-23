@@ -41,15 +41,18 @@ RunTestApp *m_instance;
 RunTestApp::RunTestApp(SystemRes *res)
 : App(res),
   imageProcess(),
-  //  speed(0,0,0),
   servoControl(SERVO_SETPOINT,0,0,0),
-  l_kp(0.01f),
-  l_ki(0.0f),
+  //  l_kp(0.015f),
+  //  l_ki(0.00000073f),
+  l_kp(0.0125f),
+  l_ki(0.00000000000001f),
   l_kd(0.0f),
-  reference(10000.0f),
-//  l_speedControl(ENCODER_SETPOINT,0,0,0),
-//  r_speedControl(ENCODER_SETPOINT,0,0,0),
-  l_speedControl(&reference, &l_kp, &l_ki, &l_kd, 0, 600),
+  r_kp(0.0099f),
+  r_ki(0.00000000000001421f),
+  r_kd(0.0f),
+  reference(9000.0f),
+  l_speedControl(&reference, &l_kp, &l_ki, &l_kd, -600, 600),
+  r_speedControl(&reference, &r_kp, &r_ki, &r_kd, -600, 600),
   m_peter()
 {
 	//	servoControl.SetILimit(0);
@@ -59,17 +62,11 @@ RunTestApp::RunTestApp(SystemRes *res)
 	//	skp = speedControl.GetKp();
 	//	skd = speedControl.GetKd();
 
-//	*l_kp = l_speedControl.GetKp();
-//	r_kp = r_speedControl.GetKp();
-
-//	*l_ki = l_speedControl.GetKi();
-//	r_ki = r_speedControl.GetKi();
-
 	ec1 = 0;
-//	ec2 = 0;
+	ec2 = 0;
 
 	l_result = 0;
-//	r_result = 0;
+	r_result = 0;
 	//	serror = 0;
 
 	m_instance = this;
@@ -77,19 +74,21 @@ RunTestApp::RunTestApp(SystemRes *res)
 	//	m_peter.addWatchedVar(&skp,"skp");
 	//	m_peter.addWatchedVar(&skd,"skd");
 
-	m_peter.addWatchedVar(&l_kp,"lkp");
-//	m_peter.addWatchedVar(&r_kp,"rkp");
-
-	m_peter.addWatchedVar(&l_ki,"lki");
-//	m_peter.addWatchedVar(&r_ki,"rki");
-
 	m_peter.addWatchedVar(&ec1,"ec1");
-//	m_peter.addWatchedVar(&ec2, "ec2");
+	//	m_peter.addWatchedVar(&ec2, "ec2");
 
 	m_peter.addWatchedVar(&reference,"sp");
 
-//	m_peter.addWatchedVar(&l_result,"l_result");
-//	m_peter.addWatchedVar(&r_result,"r_result");
+	m_peter.addWatchedVar(&ec2,"ec2");
+	//	m_peter.addWatchedVar(&r_result,"r_result");
+
+	m_peter.addWatchedVar(&l_kp,"lkp");
+	//	m_peter.addWatchedVar(&r_kp,"rkp");
+
+	m_peter.addWatchedVar(&l_ki,"lki");
+	//	m_peter.addWatchedVar(&r_ki,"rki");
+
+	//	m_peter.addWatchedVar(&r_kd,"rkd");
 
 	//	m_peter.addWatchedVar(&serror, "serror");
 	//	m_peter.addWatchedVar(&cal_result, "cal_result");
@@ -122,91 +121,92 @@ void RunTestApp::Run()
 	writer_conf.bg_color = libutil::GetRgb565(0x33, 0xB5, 0xE5);
 	LcdTypewriter writer(writer_conf);
 
-//	car->GetLcd().SetRegion({0, 64, St7735r::GetW(), LcdTypewriter::GetFontH()});
-//	writer.WriteString("Encoder:");
-//
+	//	car->GetLcd().SetRegion({0, 64, St7735r::GetW(), LcdTypewriter::GetFontH()});
+	//	writer.WriteString("Encoder:");
+	//
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> encoder =
 			[&](const Timer::TimerInt request, const Timer::TimerInt)
 			{
 		car->UpdateAllEncoders();
-//		car->GetLcd().SetRegion({0, 80, St7735r::GetW(),
-//			LcdTypewriter::GetFontH()});
-//		writer.WriteString(String::Format("%ld, %ld\n",
-//				car->GetEncoderCount(0), car->GetEncoderCount(1)).c_str());
+		//		car->GetLcd().SetRegion({0, 80, St7735r::GetW(),
+		//			LcdTypewriter::GetFontH()});
+		//		writer.WriteString(String::Format("%ld, %ld\n",
+		//				car->GetEncoderCount(0), car->GetEncoderCount(1)).c_str());
 
 		ec1 =  car->GetEncoderCount(0);
-//		ec2 =  (car->GetEncoderCount(1))/100;
+		ec2 =  car->GetEncoderCount(1);
 
-//		l_result = l_speedControl.Calc(car->GetEncoderCount(0));
-//		r_result = r_speedControl.Calc(car->GetEncoderCount(1));
-		//result = speedControl.Calc(car->GetEncoderCount(0));
+		if(t){
+			l_result = (int16_t)l_speedControl.updatePID((float)car->GetEncoderCount(0));
+			car->SetMotorPower(0,l_result);
 
-//		car->SetMotorPower(0, (int16_t)l_speedControl.updatePID((float)car->GetEncoderCount(0)));
-//		car->SetMotorPower(0, 250);
+			r_result = (int16_t)r_speedControl.updatePID((float)car->GetEncoderCount(1));
+			car->SetMotorPower(1,r_result);
+		}
+		else{
+			car->SetMotorPower(0,0);
+			car->SetMotorPower(1,0);
+		}
 
 		looper.RunAfter(request, encoder);
 			};
 	looper.RunAfter(89, encoder);
-//
-//	car->GetLcd().SetRegion({0, 96, St7735r::GetW(), LcdTypewriter::GetFontH()});
-//	writer.WriteString("Servo:");
-//
-//	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> servo =
-//			[&](const Timer::TimerInt request, const Timer::TimerInt)
-//			{
-//		car->GetLcd().SetRegion({0, 112, St7735r::GetW(),
-//			LcdTypewriter::GetFontH()});
-//		writer.WriteString(String::Format("%ld\n",
-//				car->GetServo().GetDegree()).c_str());
-//		looper.RunAfter(request, servo);
-//			};
-//	looper.RunAfter(197, servo);
-//
-//	car->GetLcd().SetRegion({0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()});
-//	writer.WriteString("error");
-//
-//	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> x_avg =
-//			[&](const Timer::TimerInt request, const Timer::TimerInt)
-//			{
-//		car->GetLcd().SetRegion({0, 144, St7735r::GetW(),
-//			LcdTypewriter::GetFontH()});
-//		writer.WriteString(String::Format("%ld\n",
-//				imageProcess.Analyze()/imageProcess.FACTOR).c_str());
-//		looper.RunAfter(request, x_avg);
-//			};
-//	looper.RunAfter(149, x_avg);
+	//
+	//	car->GetLcd().SetRegion({0, 96, St7735r::GetW(), LcdTypewriter::GetFontH()});
+	//	writer.WriteString("Servo:");
+	//
+	//	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> servo =
+	//			[&](const Timer::TimerInt request, const Timer::TimerInt)
+	//			{
+	//		car->GetLcd().SetRegion({0, 112, St7735r::GetW(),
+	//			LcdTypewriter::GetFontH()});
+	//		writer.WriteString(String::Format("%ld\n",
+	//				car->GetServo().GetDegree()).c_str());
+	//		looper.RunAfter(request, servo);
+	//			};
+	//	looper.RunAfter(197, servo);
+	//
+	//	car->GetLcd().SetRegion({0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()});
+	//	writer.WriteString("error");
+	//
+	//	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> x_avg =
+	//			[&](const Timer::TimerInt request, const Timer::TimerInt)
+	//			{
+	//		car->GetLcd().SetRegion({0, 144, St7735r::GetW(),
+	//			LcdTypewriter::GetFontH()});
+	//		writer.WriteString(String::Format("%ld\n",
+	//				imageProcess.Analyze()/imageProcess.FACTOR).c_str());
+	//		looper.RunAfter(request, x_avg);
+	//			};
+	//	looper.RunAfter(149, x_avg);
 
-	bool triggered = false;
-	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> trigger =
-			[&](const Timer::TimerInt request, const Timer::TimerInt)
-			{
-		if (!triggered)
-		{
-			if(t){
-				//				car->SetMotorPower(0,setpower);
-				//				car->SetMotorPower(1,setpower);
-				//				car->SetMotorPower(0,speed.speedCal(car,setpower));
-				//				car->SetMotorPower(1,speed.speedCal(car,setpower));
-				car->SetMotorPower(0,200);
-				car->SetMotorPower(1,200);
-
-				triggered=true;
-				looper.RunAfter(2200, trigger);
-			}
-			else
-			{
-				looper.RunAfter(503, trigger);
-			}
-		}
-		else if (triggered){
-			car->SetMotorPower(0,0);
-			car->SetMotorPower(1,0);
-			triggered=false;
-			t = false;
-			looper.RunAfter(1000, trigger);
-		}
-			};
-	looper.RunAfter(499, trigger);
+	//	bool triggered = false;
+	//	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> trigger =
+	//			[&](const Timer::TimerInt request, const Timer::TimerInt)
+	//			{
+	//		if (!triggered)
+	//		{
+	//			if(t){
+	//				car->SetMotorPower(0,200);
+	//				car->SetMotorPower(1,200);
+	//
+	//				triggered=true;
+	//				looper.RunAfter(2200, trigger);
+	//			}
+	//			else
+	//			{
+	//				looper.RunAfter(503, trigger);
+	//			}
+	//		}
+	//		else if (triggered){
+	//			car->SetMotorPower(0,0);
+	//			car->SetMotorPower(1,0);
+	//			triggered=false;
+	//			t = false;
+	//			looper.RunAfter(1000, trigger);
+	//		}
+	//			};
+	//	looper.RunAfter(499, trigger);
 
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> sendWatchData =
 			[&](const Timer::TimerInt request, const Timer::TimerInt)
@@ -226,10 +226,8 @@ void RunTestApp::Run()
 			memcpy(image2.get(), car->GetCamera().LockBuffer(), image_size);
 			car->GetCamera().UnlockBuffer();
 
-			//						car->SetMotorPower(0,setpower);
-			//						car->SetMotorPower(1,setpower);
-
 			imageProcess.start(image2.get());
+			car->SetTurning(imageProcess.Analyze());
 			//			serror = imageProcess.Analyze();
 
 			//			cal_result = servoControl.Calc(serror);
@@ -240,8 +238,8 @@ void RunTestApp::Run()
 				car->SetTurning(0);
 			}
 
-			printMidpoint();
-			printMargin();
+			//			printMidpoint();
+			//			printMargin();
 
 			//			char buffer[100];
 			//			sprintf(buffer,"MIDPOINT at %d\n",imageProcess.MIDPOINT);
@@ -276,8 +274,12 @@ void RunTestApp::PeggyListener(const std::vector<Byte> &bytes)
 		m_instance->t = true; break;
 
 	case 'f':
-//		m_instance->GetSystemRes()->car->SetMotorPower(0,m_instance->);
-		m_instance->GetSystemRes()->car->SetMotorPower(1,m_instance->setpower);
+		if(m_instance->t)
+			m_instance->t = false;
+		else
+			m_instance->t = true;
+//		m_instance->GetSystemRes()->car->SetMotorPower(0,m_instance->setpower);
+//		m_instance->GetSystemRes()->car->SetMotorPower(1,m_instance->setpower);
 		//		m_instance->GetSystemRes()->car->SetMotorPower(0,350);
 		//		m_instance->GetSystemRes()->car->SetMotorPower(1,350);
 		break;
@@ -291,12 +293,8 @@ void RunTestApp::PeggyListener(const std::vector<Byte> &bytes)
 		//		m_instance->servoControl.SetKp(m_instance->servoControl.GetKp()+0.01f);
 		//		m_instance->skp = m_instance->servoControl.GetKp();
 
-//		m_instance->l_speedControl.SetKp(m_instance->l_speedControl.GetKp()+0.0001f);
-//		m_instance->l_kp = m_instance->l_speedControl.GetKp();
-
 		m_instance->l_kp += 0.001f;
-
-//		m_instance->GetSystemRes()->car->SetMotorPower(0,m_instance->GetSystemRes()->car->GetMotor(0).GetPower()+m_instance->l_speedControl.updatePID_ori(m_instance->GetSystemRes()->car->GetEncoderCount(0)));
+		//		m_instance->r_kp += 0.001f;
 
 		break;
 
@@ -304,13 +302,8 @@ void RunTestApp::PeggyListener(const std::vector<Byte> &bytes)
 		//		m_instance->servoControl.SetKp(m_instance->servoControl.GetKp()-0.01f);
 		//		m_instance->skp = m_instance->servoControl.GetKp();
 
-//		m_instance->l_speedControl.SetKp(m_instance->l_speedControl.GetKp()-0.0001f);
-//		m_instance->l_kp = m_instance->l_speedControl.GetKp();
-
 		m_instance->l_kp -= 0.001f;
-
-//		m_instance->GetSystemRes()->car->SetMotorPower(0,m_instance->GetSystemRes()->car->GetMotor(0).GetPower()+m_instance->l_speedControl.updatePID_ori(m_instance->GetSystemRes()->car->GetEncoderCount(0)));
-
+		//		m_instance->r_kp -= 0.001f;
 		break;
 
 	case 'r':
@@ -321,66 +314,63 @@ void RunTestApp::PeggyListener(const std::vector<Byte> &bytes)
 		m_instance->reference -= 100.0f;
 		break;
 
-//	case 'q':
-//
-//		m_instance->r_speedControl.SetKp(m_instance->r_speedControl.GetKp()+0.0001f);
-//		m_instance->r_kp = m_instance->r_speedControl.GetKp();
-//
-//		m_instance->GetSystemRes()->car->SetMotorPower(1,m_instance->GetSystemRes()->car->GetMotor(1).GetPower()+m_instance->r_speedControl.Calc(m_instance->GetSystemRes()->car->GetEncoderCount(1)));
-//
-//		break;
-//
-//	case 'Q':
-//
-//		m_instance->r_speedControl.SetKp(m_instance->r_speedControl.GetKp()-0.0001f);
-//		m_instance->r_kp = m_instance->r_speedControl.GetKp();
-//
-//		m_instance->GetSystemRes()->car->SetMotorPower(1,m_instance->GetSystemRes()->car->GetMotor(1).GetPower()+m_instance->r_speedControl.Calc(m_instance->GetSystemRes()->car->GetEncoderCount(1)));
-//
-//		break;
+	case 'd':
+		m_instance->r_kd += 0.00001f;
+		break;
+
+	case 'D':
+		m_instance->r_kd -= 0.00001f;
+		break;
+
+		//	case 'q':
+		//
+		//		m_instance->r_speedControl.SetKp(m_instance->r_speedControl.GetKp()+0.0001f);
+		//		m_instance->r_kp = m_instance->r_speedControl.GetKp();
+		//
+		//		m_instance->GetSystemRes()->car->SetMotorPower(1,m_instance->GetSystemRes()->car->GetMotor(1).GetPower()+m_instance->r_speedControl.Calc(m_instance->GetSystemRes()->car->GetEncoderCount(1)));
+		//
+		//		break;
+		//
+		//	case 'Q':
+		//
+		//		m_instance->r_speedControl.SetKp(m_instance->r_speedControl.GetKp()-0.0001f);
+		//		m_instance->r_kp = m_instance->r_speedControl.GetKp();
+		//
+		//		m_instance->GetSystemRes()->car->SetMotorPower(1,m_instance->GetSystemRes()->car->GetMotor(1).GetPower()+m_instance->r_speedControl.Calc(m_instance->GetSystemRes()->car->GetEncoderCount(1)));
+		//
+		//		break;
 
 
 	case 'i':
-		//		m_instance->servoControl.SetKd(m_instance->servoControl.GetKd()+0.01f);
-		//		m_instance->skd = m_instance->servoControl.GetKd();
-
-//		m_instance->l_speedControl.SetKi(m_instance->l_speedControl.GetKi()+0.0001f);
-//		m_instance->l_ki = m_instance->l_speedControl.GetKi();
-
-		m_instance->l_ki++;
-
-//		m_instance->GetSystemRes()->car->SetMotorPower(0,m_instance->GetSystemRes()->car->GetMotor(0).GetPower()+m_instance->l_speedControl.updatePID_ori(m_instance->GetSystemRes()->car->GetEncoderCount(0)));
+		m_instance->l_ki += 0.0000001f;
+		//		m_instance->r_ki += 0.0000001f;
 
 		break;
 
 	case 'I':
-//		m_instance->l_speedControl.SetKi(m_instance->l_speedControl.GetKi()-0.0001f);
-//		m_instance->l_ki = m_instance->l_speedControl.GetKi();
-
-		m_instance->l_ki--;
-
-//		m_instance->GetSystemRes()->car->SetMotorPower(0,m_instance->GetSystemRes()->car->GetMotor(0).GetPower()+m_instance->l_speedControl.updatePID_ori(m_instance->GetSystemRes()->car->GetEncoderCount(0)));
+		m_instance->l_ki -= 0.0000001f;
+		//		m_instance->r_ki -= 0.0000001f;
 
 		break;
 
-//	case 'j':
-//		//		m_instance->servoControl.SetKd(m_instance->servoControl.GetKd()+0.01f);
-//		//		m_instance->skd = m_instance->servoControl.GetKd();
-//
-//		m_instance->r_speedControl.SetKi(m_instance->r_speedControl.GetKi()+0.0001f);
-//		m_instance->r_ki = m_instance->r_speedControl.GetKi();
-//
-//		m_instance->GetSystemRes()->car->SetMotorPower(1,m_instance->GetSystemRes()->car->GetMotor(1).GetPower()+m_instance->r_speedControl.Calc(m_instance->GetSystemRes()->car->GetEncoderCount(1)));
-//
-//		break;
-//
-//	case 'J':
-//		m_instance->r_speedControl.SetKi(m_instance->r_speedControl.GetKi()-0.0001f);
-//		m_instance->r_ki = m_instance->r_speedControl.GetKi();
-//
-//		m_instance->GetSystemRes()->car->SetMotorPower(1,m_instance->GetSystemRes()->car->GetMotor(1).GetPower()+m_instance->r_speedControl.Calc(m_instance->GetSystemRes()->car->GetEncoderCount(1)));
-//
-//		break;
+		//	case 'j':
+		//		//		m_instance->servoControl.SetKd(m_instance->servoControl.GetKd()+0.01f);
+		//		//		m_instance->skd = m_instance->servoControl.GetKd();
+		//
+		//		m_instance->r_speedControl.SetKi(m_instance->r_speedControl.GetKi()+0.0001f);
+		//		m_instance->r_ki = m_instance->r_speedControl.GetKi();
+		//
+		//		m_instance->GetSystemRes()->car->SetMotorPower(1,m_instance->GetSystemRes()->car->GetMotor(1).GetPower()+m_instance->r_speedControl.Calc(m_instance->GetSystemRes()->car->GetEncoderCount(1)));
+		//
+		//		break;
+		//
+		//	case 'J':
+		//		m_instance->r_speedControl.SetKi(m_instance->r_speedControl.GetKi()-0.0001f);
+		//		m_instance->r_ki = m_instance->r_speedControl.GetKi();
+		//
+		//		m_instance->GetSystemRes()->car->SetMotorPower(1,m_instance->GetSystemRes()->car->GetMotor(1).GetPower()+m_instance->r_speedControl.Calc(m_instance->GetSystemRes()->car->GetEncoderCount(1)));
+		//
+		//		break;
 
 
 

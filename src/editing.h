@@ -46,28 +46,26 @@ private:
 	int setpower = 240;
 
 	ImageProcess imageProcess;
-//	speedControl speed;
 
 	PositionalPidController<int,int> servoControl;
-//	PositionalPidController<int,int> l_speedControl;
-//	PositionalPidController<int,int> r_speedControl;
 
 //	int encoder_count;
 //	float skp;
 //	float skd;
 
 	float l_kp;
-//	float* r_kp;
+	float r_kp;
 
 	float l_ki;
-//	float* r_ki;
+	float r_ki;
 
 	float l_kd;
-//	float r_kd;
+	float r_kd;
 
 	float reference;
 
 	PIDhandler l_speedControl;
+	PIDhandler r_speedControl;
 
 //	int16_t serror;
 //	int16_t cal_result;
