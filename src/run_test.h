@@ -58,14 +58,14 @@ private:
 	float r_m_setpoint;
 
 	// for software differential
-	int setpoint;
+	int16_t sd_setpoint;
 
 	//servo_pid
 	int16_t s_degree;
 	int16_t s_result;
 
 	//motor_pid
-	int16_t ec1, ec2;
+	int16_t ec0, ec1;
 	int16_t l_result;
 	int16_t r_result;
 

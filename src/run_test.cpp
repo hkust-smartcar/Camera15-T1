@@ -49,26 +49,26 @@ RunTestApp::RunTestApp(SystemRes *res)
   r_ki(0.00000000000001421f),
   r_kd(0.0f),
 
-  s_kp(0.0f),
+  s_kp(0.56f),
   s_ki(0.0f),
-  s_kd(0.0f),
+  s_kd(0.002f),
 
-  l_m_setpoint(8000.0f),
-  r_m_setpoint(8000.0f),
+  l_m_setpoint(5000.0f),
+  r_m_setpoint(5000.0f),
 
-  setpoint(8000),
+  sd_setpoint(5000),
 
   s_setpoint(0.0f),
 
   l_speedControl(&l_m_setpoint, &l_kp, &l_ki, &l_kd, -600, 600),
   r_speedControl(&r_m_setpoint, &r_kp, &r_ki, &r_kd, -600, 600),
-  servo_Control(&s_setpoint, &s_kp, &s_ki, &s_kd, -200, 200),
+  servo_Control(&s_setpoint, &s_kp, &s_ki, &s_kd, -1000, 1000),
 
   m_peter()
 {
 	//raw data: left & right encoder, servo angle
+	ec0 = 0;
 	ec1 = 0;
-	ec2 = 0;
 	s_degree = 0;
 
 	l_result = 0;
@@ -79,21 +79,32 @@ RunTestApp::RunTestApp(SystemRes *res)
 
 	//for grapher use
 
-	//	m_peter.addWatchedVar(&s_kp,"skp");
-	//	m_peter.addWatchedVar(&s_ki,"ski");
-	//	m_peter.addWatchedVar(&s_kd,"skd");
-	//	m_peter.addWatchedVar(&s_degree, "serror");
-	// 	m_peter.addWatchedVar(&s_result,"sresult");
+	m_peter.addWatchedVar(&s_kp,"skp");
+	m_peter.addWatchedVar(&s_ki,"ski");
+	m_peter.addWatchedVar(&s_kd,"skd");
+	m_peter.addWatchedVar(&s_degree, "serror");
+	m_peter.addWatchedVar(&s_result,"sresult");
+	m_peter.addWatchedVar(&sd_setpoint,"sp");
 
-	//	m_peter.addWatchedVar(&ec1,"ec1");
-	//	m_peter.addWatchedVar(&r_kp,"rkp");
-	//	m_peter.addWatchedVar(&r_ki,"rki");
-	//	m_peter.addWatchedVar(&r_kd,"rkd");
+	//
 
-	//	m_peter.addWatchedVar(&ec2,"ec2");
-	//	m_peter.addWatchedVar(&l_kp,"lkp");
-	//	m_peter.addWatchedVar(&l_ki,"lki");
-	//	m_peter.addWatchedVar(&l_kd,"lkd");
+	/* left wheel
+
+	m_peter.addWatchedVar(&ec1,"ec1");
+	m_peter.addWatchedVar(&r_kp,"rkp");
+	m_peter.addWatchedVar(&r_ki,"rki");
+	m_peter.addWatchedVar(&r_kd,"rkd");
+
+	 */
+
+	/* right wheel
+
+	m_peter.addWatchedVar(&ec2,"ec2");
+	m_peter.addWatchedVar(&l_kp,"lkp");
+	m_peter.addWatchedVar(&l_ki,"lki");
+	m_peter.addWatchedVar(&l_kd,"lkd");
+
+	*/
 
 	m_peter.Init(&PeggyListener);
 }
@@ -123,14 +134,32 @@ void RunTestApp::Run()
 			};
 	looper.RunAfter(199, blink);
 
+	//Initiate LCD writer for printing real time information
+		LcdTypewriter::Config writer_conf;
+		writer_conf.lcd = &car->GetLcd();
+		writer_conf.bg_color = libutil::GetRgb565(0x33, 0xB5, 0xE5);
+		LcdTypewriter writer(writer_conf);
+
+	//Print Servo degree
+		car->GetLcd().SetRegion({0, 64, St7735r::GetW(), LcdTypewriter::GetFontH()});
+		writer.WriteString("Encoder:");
+
 	//Update encoder count, input to and update speed PID controller
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> encoder =
 			[&](const Timer::TimerInt request, const Timer::TimerInt)
 			{
+				//update and get encoder's count
 				car->UpdateAllEncoders();
-				ec1 =  car->GetEncoderCount(0);
-				ec2 =  car->GetEncoderCount(1);
+				ec0 =  car->GetEncoderCount(0);
+				ec1 =  car->GetEncoderCount(1);
 
+				//print encoder count
+				car->GetLcd().SetRegion({0, 80, St7735r::GetW(),
+					LcdTypewriter::GetFontH()});
+				writer.WriteString(String::Format("%ld, %ld\n",
+						ec0, ec1).c_str());
+
+				//if t is true, update PID and give power to car, else stop the car
 				if(t){
 					l_result = (int16_t)l_speedControl.updatePID((float)car->GetEncoderCount(0));
 					car->SetMotorPower(0,l_result);
@@ -147,12 +176,6 @@ void RunTestApp::Run()
 			};
 	looper.RunAfter(89, encoder);
 
-	//Initiate LCD writer for printing real time information
-	LcdTypewriter::Config writer_conf;
-	writer_conf.lcd = &car->GetLcd();
-	writer_conf.bg_color = libutil::GetRgb565(0x33, 0xB5, 0xE5);
-	LcdTypewriter writer(writer_conf);
-
 	//Print Servo degree
 	car->GetLcd().SetRegion({0, 96, St7735r::GetW(), LcdTypewriter::GetFontH()});
 	writer.WriteString("Servo:");
@@ -160,11 +183,15 @@ void RunTestApp::Run()
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> servo =
 			[&](const Timer::TimerInt request, const Timer::TimerInt)
 			{
+
+				//print info
 				car->GetLcd().SetRegion({0, 112, St7735r::GetW(),
 					LcdTypewriter::GetFontH()});
 				writer.WriteString(String::Format("%ld\n",
 						car->GetServo().GetDegree()).c_str());
+
 				looper.RunAfter(request, servo);
+
 			};
 	looper.RunAfter(197, servo);
 
@@ -193,11 +220,14 @@ void RunTestApp::Run()
 			imageProcess.start(image2.get());
 
 			//set angle with servo PID controller and image process result
-			car->SetTurning(imageProcess.Analyze());
+			//negative for correcting direction
+			//*100 as error is too small
+			s_result = (int16_t)servo_Control.updatePID_ori(-(float)imageProcess.Analyze()*100);
+			car->SetTurning(s_result);
 
-			//set degree according to software differential
-			l_m_setpoint =  (float)software_differential.turn_left_encoder(setpoint,car->GetServo().GetDegree(),9500,3700);
-			r_m_setpoint = (float) software_differential.turn_right_encoder(setpoint,car->GetServo().GetDegree(),9500,3700);
+			//set speed according to software differential
+			l_m_setpoint =  (float)software_differential.turn_left_encoder(sd_setpoint,car->GetServo().GetDegree(),9500,3700);
+			r_m_setpoint = (float) software_differential.turn_right_encoder(sd_setpoint,car->GetServo().GetDegree(),9500,3700);
 
 			if (imageProcess.crossroad && abs(car->GetServo().GetDegree()-9500)<10){
 				car->SetTurning(0);
@@ -228,45 +258,67 @@ void RunTestApp::PeggyListener(const std::vector<Byte> &bytes)
 
 	//for PID tunning
 	case 'p':
-		m_instance->l_kp += 0.001f;
+		m_instance->s_kp += 0.01f;
+//		m_instance->l_kp += 0.001f;
 //		m_instance->r_kp += 0.001f;
 		break;
 
 	case 'P':
-		m_instance->l_kp -= 0.001f;
+		m_instance->s_kp -= 0.01f;
+//		m_instance->l_kp -= 0.001f;
 //		m_instance->r_kp -= 0.001f;
 		break;
 
 	case 'i':
-		m_instance->l_ki += 0.0000001f;
+		m_instance->s_ki += 0.0000001f;
+//		m_instance->l_ki += 0.0000001f;
 //		m_instance->r_ki += 0.0000001f;
 		break;
 
 	case 'I':
-		m_instance->l_ki -= 0.0000001f;
+		m_instance->s_ki -= 0.0000001f;
+//		m_instance->l_ki -= 0.0000001f;
 //		m_instance->r_ki -= 0.0000001f;
 		break;
 
 	case 'd':
-		m_instance->r_kd += 0.00001f;
+		m_instance->s_kd += 0.0001f;
+//		m_instance->l_kd += 0.00001f;
+//		m_instance->r_kd += 0.00001f;
 		break;
 
 	case 'D':
-		m_instance->r_kd -= 0.00001f;
+		m_instance->s_kd -= 0.0001f;
+//		m_instance->l_kd -= 0.00001f;
+//		m_instance->r_kd -= 0.00001f;
 		break;
 
+	case 's':
+		m_instance->s_setpoint += 1.0f;
+		break;
+
+	case 'S':
+		m_instance->s_setpoint -= 1.0f;
+		break;
+
+	//faster!
 	case 'r':
 		m_instance->l_m_setpoint += 100.0f;
+		m_instance->r_m_setpoint += 100.0f;
+		m_instance->sd_setpoint += 100.0f;
 		break;
 
+	//slower!
 	case 'R':
-		m_instance->l_m_setpoint -= 100.0f;
-		break;
+			m_instance->l_m_setpoint -= 100.0f;
+			m_instance->r_m_setpoint -= 100.0f;
+			m_instance->sd_setpoint -= 100.0f;
+			break;
 
 	// move backward
 	case 'y':
-		m_instance->GetSystemRes()->car->SetMotorPower(0,-180);
-		m_instance->GetSystemRes()->car->SetMotorPower(1,-180);
+		m_instance->GetSystemRes()->car->SetMotorPower(0,-240);
+		m_instance->GetSystemRes()->car->SetMotorPower(1,-240);
 		break;
 
 	}
