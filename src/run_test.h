@@ -66,8 +66,8 @@ private:
 
 	//motor_pid
 	int16_t ec0, ec1;
-	int16_t l_result;
-	int16_t r_result;
+	int32_t l_result;
+	int32_t r_result;
 
 
 	//pid controller for servo & motor

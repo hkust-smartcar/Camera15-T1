@@ -23,6 +23,7 @@ PIDhandler::PIDhandler(float *ref, float *kp, float *ki, float *kd, const float 
 	Ki(ki),
 	Kd(kd),
 	eSum(0),
+	output(0),
 	lastError(0),
 	epsilon(*reference * EPSILON_RATIO),
 	lastTimeUpdate(0),
@@ -52,6 +53,7 @@ void PIDhandler::reset(void)
 {
 	eSum = 0;
 	lastTimeUpdate = System::Time();
+	output = 0;
 }
 
 float PIDhandler::updatePID(float val)

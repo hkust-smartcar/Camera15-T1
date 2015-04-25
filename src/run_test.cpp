@@ -49,19 +49,19 @@ RunTestApp::RunTestApp(SystemRes *res)
   r_ki(0.00000000000001421f),
   r_kd(0.0f),
 
-  s_kp(0.56f),
+  s_kp(0.93f),
   s_ki(0.0f),
-  s_kd(0.002f),
+  s_kd(0.0f),
 
-  l_m_setpoint(5000.0f),
-  r_m_setpoint(5000.0f),
+  l_m_setpoint(10300.0f),
+  r_m_setpoint(10300.0f),
 
-  sd_setpoint(5000),
+  sd_setpoint(10300),
 
   s_setpoint(0.0f),
 
-  l_speedControl(&l_m_setpoint, &l_kp, &l_ki, &l_kd, -600, 600),
-  r_speedControl(&r_m_setpoint, &r_kp, &r_ki, &r_kd, -600, 600),
+  l_speedControl(&l_m_setpoint, &l_kp, &l_ki, &l_kd, 0, 600),
+  r_speedControl(&r_m_setpoint, &r_kp, &r_ki, &r_kd, 0, 600),
   servo_Control(&s_setpoint, &s_kp, &s_ki, &s_kd, -1000, 1000),
 
   m_peter()
@@ -161,10 +161,10 @@ void RunTestApp::Run()
 
 				//if t is true, update PID and give power to car, else stop the car
 				if(t){
-					l_result = (int16_t)l_speedControl.updatePID((float)car->GetEncoderCount(0));
+					l_result = (int32_t)l_speedControl.updatePID((float)car->GetEncoderCount(0));
 					car->SetMotorPower(0,l_result);
 
-					r_result = (int16_t)r_speedControl.updatePID((float)car->GetEncoderCount(1));
+					r_result = (int32_t)r_speedControl.updatePID((float)car->GetEncoderCount(1));
 					car->SetMotorPower(1,r_result);
 				}
 				else{
@@ -225,7 +225,7 @@ void RunTestApp::Run()
 			s_result = (int16_t)servo_Control.updatePID_ori(-(float)imageProcess.Analyze()*100);
 			car->SetTurning(s_result);
 
-			//set speed according to software differential
+//			//set speed according to software differential
 			l_m_setpoint =  (float)software_differential.turn_left_encoder(sd_setpoint,car->GetServo().GetDegree(),9500,3700);
 			r_m_setpoint = (float) software_differential.turn_right_encoder(sd_setpoint,car->GetServo().GetDegree(),9500,3700);
 
@@ -250,6 +250,11 @@ void RunTestApp::PeggyListener(const std::vector<Byte> &bytes)
 	{
 	//move & stop
 	case 'f':
+		//reset pid
+		m_instance->l_speedControl.reset();
+		m_instance->r_speedControl.reset();
+		m_instance->servo_Control.reset();
+
 		if(m_instance->t)
 			m_instance->t = false;
 		else
@@ -310,10 +315,10 @@ void RunTestApp::PeggyListener(const std::vector<Byte> &bytes)
 
 	//slower!
 	case 'R':
-			m_instance->l_m_setpoint -= 100.0f;
-			m_instance->r_m_setpoint -= 100.0f;
-			m_instance->sd_setpoint -= 100.0f;
-			break;
+		m_instance->l_m_setpoint -= 100.0f;
+		m_instance->r_m_setpoint -= 100.0f;
+		m_instance->sd_setpoint -= 100.0f;
+		break;
 
 	// move backward
 	case 'y':
