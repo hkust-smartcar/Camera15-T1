@@ -19,6 +19,7 @@
 #include <libutil/looper.h>
 #include <libutil/misc.h>
 #include <libutil/string.h>
+#include <libsc/k60/jy_mcu_bt_106.h>
 
 #include "car.h"
 #include "system_res.h"
@@ -42,15 +43,15 @@ void CarTestApp::Run()
 	const Uint image_size = car->GetCameraW() * car->GetCameraH() / 8;
 	unique_ptr<Byte[]> image2(new Byte[image_size]);
 
+	JyMcuBt106::Config bt_conf;
+	bt_conf.id = 0;
+	bt_conf.baud_rate = libbase::k60::Uart::Config::BaudRate::k115200;
+	JyMcuBt106 bt(bt_conf);
+
+
 	Looper looper;
 
-	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> blink =
-			[&](const Timer::TimerInt request, const Timer::TimerInt)
-			{
-				car->GetLed(0).Switch();
-				looper.RunAfter(request, blink);
-			};
-	looper.RunAfter(200, blink);
+	looper.Repeat(199, std::bind(&libsc::Led::Switch, &car->GetLed(0)), Looper::RepeatMode::kLoose);
 
 	LcdTypewriter::Config writer_conf;
 	writer_conf.lcd = &car->GetLcd();
@@ -61,16 +62,15 @@ void CarTestApp::Run()
 	writer.WriteString("Encoder:");
 
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> encoder =
-			[&](const Timer::TimerInt request, const Timer::TimerInt)
+				[&](const Timer::TimerInt request, const Timer::TimerInt)
 			{
 				car->UpdateAllEncoders();
 				car->GetLcd().SetRegion({0, 144, St7735r::GetW(),
 						LcdTypewriter::GetFontH()});
 				writer.WriteString(String::Format("%ld, %ld\n",
 						car->GetEncoderCount(0), car->GetEncoderCount(1)).c_str());
-				looper.RunAfter(request, encoder);
 			};
-	looper.RunAfter(250, encoder);
+	looper.Repeat(19, encoder, Looper::RepeatMode::kPrecise);
 
 	car->GetCamera().Start();
 	looper.ResetTiming();
@@ -84,6 +84,9 @@ void CarTestApp::Run()
 			car->GetLcd().SetRegion({0, 0, car->GetCameraW(), car->GetCameraH()});
 			car->GetLcd().FillBits(0, 0xFFFF, image2.get(),
 					car->GetCameraW() * car->GetCameraH());
+
+//			car->SetMotorPower(0,300);
+//			car->SetMotorPower(1,300);
 		}
 
 		looper.Once();

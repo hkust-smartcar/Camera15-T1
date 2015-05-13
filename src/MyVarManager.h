@@ -2,7 +2,7 @@
  * MyVarManager.h
  *
  * Author: PeterLau
- * Version: 2.8.0
+ * Version: 2.9.0
  *
  * Copyright (c) 2014-2015 HKUST SmartCar Team
  * Refer to LICENSE for details
@@ -13,6 +13,8 @@
 // TODO: enable following preprocessor command
 //#ifdef LIBSC_USE_UART
 
+#include <functional>
+#include <vector>
 #include <typeinfo>
 #include <string.h>
 #include <cxxabi.h>
@@ -21,6 +23,9 @@
 #include <libsc/k60/ftdi_ft232r.h>
 #include <libbase/k60/sys_tick.h>
 #include <libsc/k60/jy_mcu_bt_106.h>
+
+#define MAX(a, b) ((a > b)? a : b)
+#define inRange(n, v, x) ((v < n)? n : ((v > x)? x : v))
 
 using namespace libsc;
 using namespace libsc::k60;
@@ -89,17 +94,17 @@ public:
 	{
 		if (!isStarted)
 		{
-			ObjMng newObj(sharedObj, sizeof(sharedObj), TypeId::getTypeId(*sharedObj), s);
+			ObjMng newObj(sharedObj, sizeof(*sharedObj), TypeId::getTypeId(*sharedObj), s);
 			sharedObjMng.push_back(newObj);
 		}
 	}
 
 	template<typename ObjType>
-	void addWatchedVar(ObjType *watchedObj, std::string s)
+	void addWatchedVar(ObjType *watchedObj)
 	{
 		if (!isStarted)
 		{
-			ObjMng newObj(watchedObj, sizeof(*watchedObj), TypeId::getTypeId(*watchedObj), s);
+			ObjMng newObj(watchedObj, sizeof(*watchedObj), TypeId::getTypeId(*watchedObj), "");
 			watchedObjMng.push_back(newObj);
 		}
 	}
@@ -108,17 +113,17 @@ public:
 
 private:
 
-	OnReceiveListener	m_origin_listener;
+	OnReceiveListener				m_origin_listener;
 
 	std::vector<ObjMng>				sharedObjMng;
 	std::vector<ObjMng>				watchedObjMng;
 
 	bool							isStarted;
-	Byte						rx_threshold;
-
-	std::vector<Byte>				rx_buffer;
+	const Byte						rx_threshold;
 
 	JyMcuBt106						m_uart;
+
+	std::vector<Byte>				rx_buffer;
 
 	static bool listener(const std::vector<Byte> &bytes);
 
@@ -128,6 +133,8 @@ private:
 
 	void sendWatchedVarInfo(void);
 	void sendSharedVarInfo(void);
+
+	void changeSharedVars(const std::vector<Byte> &msg);
 
 };
 

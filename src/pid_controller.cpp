@@ -11,6 +11,8 @@
 
 #include "pid_controller.h"
 
+#include <libutil/misc.h>
+
 using namespace libsc;
 
 #define abs(v) ((v > 0)? v : -v)
@@ -54,20 +56,25 @@ void PIDhandler::reset(void)
 	eSum = 0;
 	lastTimeUpdate = System::Time();
 	output = 0;
+
 }
 
 float PIDhandler::updatePID(float val)
 {
 	float error = *reference - val;
-	uint32_t dt = Timer::TimeDiff(System::Time(), lastTimeUpdate);
+	float dt = Timer::TimeDiff(System::Time(), lastTimeUpdate)/1000.0f;
 	float dE = (error - lastError) / dt;
 	lastError = error;
 
 	if (abs(lastError) >= epsilon)
 		eSum += error*dt;
 
-	output += *Kp * lastError + *Ki * eSum + *Kd * dE;
+	float m_i_limit = 100;
+	float I = *Ki*eSum;
 
+	I = libutil::Clamp<float>(-m_i_limit, I, m_i_limit);
+
+	output += *Kp * lastError + I + *Kd * dE;
 	lastTimeUpdate = System::Time();
 
 	return inRange(min, output, max);

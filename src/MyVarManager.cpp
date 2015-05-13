@@ -2,16 +2,16 @@
  * MyVarManager.cpp
  *
  * Author: PeterLau
- * Version: 2.8.0
+ * Version: 2.9.0
  *
  * Copyright (c) 2014-2015 HKUST SmartCar Team
  * Refer to LICENSE for details
  */
 
+#include <cassert>
 #include <cstdlib>
 #include <functional>
 #include <utility>
-
 
 #include <libsc/system.h>
 #include <libsc/k60/ftdi_ft232r.h>
@@ -31,6 +31,17 @@ using namespace std;
 MyVarManager *m_pd_instance;
 
 MyVarManager::TypeId *MyVarManager::TypeId::m_instance = nullptr;
+
+inline uint8_t inRangeWithAssert(uint8_t n, uint8_t v, uint8_t x)
+{
+	if (n <= v && x > v)
+		return v;
+	else
+	{
+		assert(false);
+		return -1;
+	}
+}
 
 JyMcuBt106::Config MyVarManager::get106UartConfig(const uint8_t id)
 {
@@ -57,8 +68,8 @@ FtdiFt232r::Config MyVarManager::get232UartConfig(const uint8_t id)
 MyVarManager::MyVarManager(void)
 :
 	rx_threshold(7),
-	m_uart(get106UartConfig(0)),
-	isStarted(false)
+	isStarted(false),
+	m_uart(get106UartConfig(0))
 {
 	m_pd_instance = this;
 	System::Init();
@@ -78,11 +89,11 @@ bool MyVarManager::listener(const std::vector<Byte> &bytes)
 	if (m_pd_instance->rx_buffer.size() < m_pd_instance->rx_threshold)
 		return true;
 
-	if (m_pd_instance->rx_buffer.size() == m_pd_instance->rx_threshold)
+	if (m_pd_instance->rx_buffer.size() >= m_pd_instance->rx_threshold)
 	{
-		if (m_pd_instance->rx_buffer.at(1))
+		if (m_pd_instance->rx_buffer[1])
 		{
-			switch (m_pd_instance->rx_buffer.at(0))
+			switch (m_pd_instance->rx_buffer[0])
 			{
 			case 's':
 				m_pd_instance->isStarted = true;
@@ -91,6 +102,7 @@ bool MyVarManager::listener(const std::vector<Byte> &bytes)
 			case 'e':
 				m_pd_instance->isStarted = false;
 				break;
+
 			case 'w':
 				m_pd_instance->sendWatchedVarInfo();
 				break;
@@ -100,7 +112,7 @@ bool MyVarManager::listener(const std::vector<Byte> &bytes)
 				break;
 
 			case 'c':
-				// TODO: change variable here
+				m_pd_instance->changeSharedVars(m_pd_instance->rx_buffer);
 				break;
 			}
 		}
@@ -108,7 +120,7 @@ bool MyVarManager::listener(const std::vector<Byte> &bytes)
 			m_pd_instance->m_origin_listener(m_pd_instance->rx_buffer);
 	}
 
-	m_pd_instance->rx_buffer.clear();
+	m_pd_instance->rx_buffer.erase(m_pd_instance->rx_buffer.begin(), m_pd_instance->rx_buffer.begin() + 7);
 	return true;
 }
 
@@ -148,6 +160,13 @@ void MyVarManager::sendSharedVarInfo(void)
 		m_uart.SendBuffer((Byte *)".", 1);
 	}
 	m_uart.SendBuffer((Byte *)"end", 3);
+}
+
+void MyVarManager::changeSharedVars(const std::vector<Byte> &msg)
+{
+	int objIndex = inRangeWithAssert(0, msg[2], sharedObjMng.size());
+	for (int i = 0; i < sharedObjMng[objIndex].len; i++)
+		((Byte *)(sharedObjMng[objIndex].obj))[i] = msg[3 + i];
 }
 
 void MyVarManager::Init(void)

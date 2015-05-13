@@ -68,6 +68,7 @@ private:
 	int16_t ec0, ec1;
 	int32_t l_result;
 	int32_t r_result;
+	int16_t sp_storage[2];
 
 
 	//pid controller for servo & motor
@@ -81,6 +82,7 @@ private:
 	ImageProcess imageProcess;
 
 	static void PeggyListener(const std::vector<Byte> &bytes);
+	void printResult();
 
 
 };

@@ -12,6 +12,10 @@
 
 #pragma once
 
+
+#define HEIGHT 60
+#define WIDTH 80
+
 using namespace libsc::k60;
 using namespace libsc;
 using namespace std;
@@ -25,21 +29,33 @@ public:
 	void start(Byte* image);
 
 	int Analyze(void);
-	double MidpointSumCal(int start, int end);
+	double MidpointSumCal(Uint start, Uint end);
+	void MedianFilter(bool* array_row, int length);
 
 	~ImageProcess()
 	{}
 
 	bool bitmap[60][80];
-	int margin[60][2];
-	int midpoint[60];
-	int MIDPOINT = 37;
+	Uint margin[60][2];
+	Uint midpoint[60];
+	Uint MIDPOINT = 37;
 
 	int16_t black_count = 0;
 	int16_t white_count = 0;
-	int FACTOR = 90;
+	//for amplifying error
+	Uint FACTOR = 100;
 
+	//Q & cross road
+	Uint start_row = 0;
+	Uint end_row = HEIGHT;
+
+	Uint black_end = 0;
+	Uint white_start  = HEIGHT;
+	Uint white_end = HEIGHT;
+
+	//indicate situation
 	bool Q = false;
+	bool Qr = false;
 	bool crossroad = false;
 	bool l_byebye = false;
 	bool r_byebye = false;
