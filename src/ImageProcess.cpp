@@ -6,9 +6,19 @@
  */
 
 #include "ImageProcess.h"
+#include <algorithm>
 
-#define RS 5	//row start
-#define RE 80-5	//row end
+#define RS 0	//row start
+#define RE 80	//row end
+#define WHITECOUNT 0
+#define ISWHITE 1
+#define ISBLACK 2
+#define WHITEAT 3
+#define CS 35
+#define CE 45
+#define LEFT 0
+#define RIGHT 1
+
 
 namespace camera{
 
@@ -16,32 +26,12 @@ ImageProcess::ImageProcess()
 {
 	for(int i=0; i<60; i++){
 		midpoint[i] = MIDPOINT;
-	}
-}
 
-int Median(bool* array){
-	int sort[5];
-	for(int i = 0; i < 5; i++){
-		for(int j = 0; j < 5; j++){
-			if(j > i){
-				sort[i] = array[j] < array[i] ? array[j] : array[i];
-			}
-		}
+		data[i][0]=0;
+		data[i][1]=0;
+		data[i][2]=0;
+		data[i][3]=LEFT;
 	}
-	return sort[3];
-}
-
-
-void ImageProcess::MedianFilter(bool* array_row, int length){
-	bool* pRow = array_row;
-	int data[length];
-	for(int i = 0; i < length; i++){
-		data[i] = Median(pRow++);
-	}
-	for(int i = 0; i < length; i++){
-		array_row[i] = data[i];
-	}
-
 }
 
 void ImageProcess::start(Byte* image){
@@ -52,11 +42,6 @@ void ImageProcess::start(Byte* image){
 	crossroad = false;
 	start_row = 0;
 	end_row = HEIGHT;
-//	bool detected = false;
-
-	//for Q
-	Q = false;
-	black_count = 0;
 
 	//for going out
 	l_byebye = false;
@@ -64,201 +49,315 @@ void ImageProcess::start(Byte* image){
 	int l_going_out = 0;
 	int r_going_out = 0;
 
+	//for right angle
+	right_angle = false;
+	Qr = false;
+
+//	dis.correction(image,bitmap);
 	//convert to bits
-	for(int16_t image_row=0; image_row<HEIGHT; image_row++){
-		for(int16_t byte=0; byte<10; byte++){
-			Byte check_image = image[image_row*10+byte];
-			/*to bit*/
-			for(int16_t bit=7; bit>=0; bit--){
-				bitmap[image_row][8*byte+bit] = check_image & 0x01;
-				check_image >>= 1;
+		for(int16_t image_row=0; image_row<HEIGHT; image_row++){
+			for(int16_t byte=0; byte<10; byte++){
+				Byte check_image = image[image_row*10+byte];
+				/*to bit*/
+				for(int16_t bit=7; bit>=0; bit--){
+					bitmap[image_row][8*byte+bit] = check_image & 0x01;
+					check_image >>= 1;
+				}
 			}
 		}
-	}
-
-	//filter noise
-	for(Uint filter_row=0; filter_row<HEIGHT; filter_row++){
-		bool* array_ptr = bitmap[filter_row];
-		MedianFilter(array_ptr,WIDTH);
-	}
 
 	// start image processing
-	for(int16_t row=0; row<HEIGHT; row++){
+	for(int16_t row=HEIGHT; row>0; row--){
 
-		//start from previous midpoint
-		margin[row][0] = RS;
-		bool l_prev = bitmap[row][midpoint[row]];
+		data[row][WHITECOUNT]= 0;
+		data[row][ISWHITE] = 0;
+		data[row][ISBLACK] = 0;
+		data[row][WHITEAT] = LEFT;
 
-		margin[row][1] = RS;
-		bool r_prev = bitmap[row][midpoint[row]];
-
-		// scan to left
-		for(int l_column= midpoint[row]; l_column>RS ; l_column--){
-			if(bitmap[row][l_column]!=l_prev && !l_prev){
-				margin[row][0]=l_column;
-				break;
-			}
-			l_prev = bitmap[row][l_column];
+		//collect row data: white pixels in row
+		for(int pixels=0; pixels<WIDTH; pixels++){
+			if(!bitmap[row][pixels])
+				data[row][WHITECOUNT]++;
 		}
 
-		//scan to right
-		for(int r_column=midpoint[row]; r_column<RE; r_column++){
-			if(bitmap[row][r_column]!=r_prev && !r_prev){
-				margin[row][1]=r_column;
-				break;
-			}
-			r_prev = bitmap[row][r_column];
+		//collect row data: white row?
+		if(data[row][WHITECOUNT]>RE-5){//WIDTH*5/6){
+			data[row][ISWHITE] = 1;
 		}
 
-		//if no right margin for this row
-		if(margin[row][1]==RS){
-			//if it's white (all pixels are false)
-			if(!bitmap[row][RE-10]){
-				margin[row][1]=RE;
+		//collect row data: black row?
+		else if(WIDTH-data[row][WHITECOUNT]>RE-5){//})>WIDTH*5/6){
+			data[row][ISBLACK] = 1;
+		}
+
+		//collect row data: white at left(0) or right(1)
+		int lwc = 0;
+		int rwc = 0;
+		for(int i = RS; i<RE/2; i++){
+			if(!bitmap[row][i]) //if black
+				lwc++;
+		}
+		for(int i = RE/2; i<RE; i++){
+			if(!bitmap[row][i]) //if black
+				rwc++;
+		}
+		if(rwc>lwc){
+			data[row][WHITEAT]=RIGHT;
+		}
+
+		// avoid black midpoint
+		int16_t mid;
+
+		if(row == HEIGHT)
+		{
+
+			if(data[row][ISBLACK]==1){
+				while(row>0 && data[row][ISBLACK]==0){
+					margin[row][LEFT]=RS;
+					margin[row][RIGHT]=RS;
+					midpoint[row]=RS;
+					row--;
+				}
+			}
+			mid = midpoint[row];
+
+			//check if prev midpoint is black
+			if(bitmap[row][mid]){
+				if(data[row][WHITEAT]==LEFT){
+					for(int i=mid; i>RS; i--){
+						if(bitmap[row][mid]){
+							mid--;
+						}
+						else{
+							break;
+						}
+					}
+				}
+				else{
+					for(int i=mid; i<RE; i++){
+						if(bitmap[row][mid]){
+							mid++;
+						}
+						else{
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		//prevent sudden change of midpoint
+		else{
+			mid = midpoint[row+1];
+		}
+
+		margin[row][LEFT]=RS;
+		margin[row][RIGHT]=RS;
+		//if midpoint = black, out of track already
+		if(!bitmap[row][mid]){
+			//start from previous midpoint
+			bool l_prev = bitmap[row][mid];
+			bool r_prev = bitmap[row][mid];
+
+			// scan to left
+			for(int l_column= mid; l_column>RS ; l_column--){
+				if(bitmap[row][l_column]!=l_prev && !l_prev){
+					margin[row][LEFT]=l_column;
+					break;
+				}
+				l_prev = bitmap[row][l_column];
 			}
 
-		}
-		//check black row
-		if(abs(margin[row][1]-margin[row][0])<10)
-			black_count++;
+			//scan to right
+			for(int r_column= mid; r_column<RE; r_column++){
+				if(bitmap[row][r_column]!=r_prev && !r_prev){
+					margin[row][RIGHT]=r_column;
+					break;
+				}
+				r_prev = bitmap[row][r_column];
+			}
 
+			//if no right margin for this row
+			if(margin[row][RIGHT]==RS){
+				//if it's white (all pixels are false)
+				if(!bitmap[row][RE-10]){
+					margin[row][RIGHT]=RE;
+				}
+
+			}
+		}
+		//if it's suppose to be black
+		else{
+			for(int sth=row; sth>0; sth--){
+					data[sth][WHITECOUNT]=0;
+					data[sth][ISBLACK]=1;
+					data[sth][ISWHITE]=0;
+					midpoint[sth]=0;
+					r_going_out++;
+			}
+			break;
+
+		}
 		//check going out
-		if(margin[row][0]>MIDPOINT){ // b w
+		if(margin[row][LEFT]>MIDPOINT){ // b w
 			l_going_out++;
 		}
 
-		if (margin[row][1]<MIDPOINT){ // w b
+		if (margin[row][RIGHT]<MIDPOINT){ // w b
 			r_going_out++;
 		}
 
-		/* check for sudden change of edge
-		if(row>3 && (abs(margin[row][0]-margin[row-3][0])>WIDTH/6 && abs(margin[row][1]-margin[row-3][1])>WIDTH/6)){
-			// mark start & end
-			if(!detected){
-				start_row = row;
-				detected = true;
+		midpoint[row] = (margin[row][LEFT]+margin[row][RIGHT])/2;
+		//update data: white count within track
+		data[row][WHITECOUNT]=margin[row][RIGHT]-margin[row][LEFT];
+
+	}
+
+	//check right angle/ cross road
+
+		//find last black row
+		black_end = 0;
+		for(int black = HEIGHT; black>0; black--){
+			if(data[black][ISBLACK]==1){
+				black_end = black;
+				break;
+			}
+		}
+
+		//scan down from last black
+		//find first white row
+		white_start = black_end;
+		for(int white = white_start; white<HEIGHT; white++){
+			if(data[white][ISWHITE]==1){
+				white_start = white;
+				break;
+			}
+		}
+		//find last white row
+		white_end = white_start+1;
+		for(int white = white_end; white<HEIGHT; white+=2){
+			if(data[white][ISWHITE]==0){
+				white_end = white-1; //last white row
+				break;
+			}
+			white_end = white;
+		}
+
+		//check if it's black line before/after right angle
+		//scan up from "last black +5"
+		//stop when found normal row
+		black_line = false;
+		checkRA =black_end+1;
+
+		for(int white = HEIGHT; white>0; white--){
+			int count =0;
+			if(data[black_end][WHITEAT]==LEFT){
+				for(int pixels=0; pixels<WIDTH; pixels++){
+					if(!bitmap[white][pixels])
+						count++;
+				}
 			}
 			else{
-				end_row = row;
-				detected = false;
+				for(int pixels=0; pixels<WIDTH; pixels++){
+					if(!bitmap[white][pixels])
+						count++;
+				}
+			}
+			if(count>WIDTH/4){
+				black_line = true;
+				checkRA = white;
+				break;
 			}
 		}
-		if(end_row<start_row){
-			end_row = HEIGHT;
+
+		if(black_line && white_start>checkRA&& checkRA-black_end>HEIGHT/2){ // to prevent seeing other track // && checkRA-black_end>HEIGHT/2){
+			//find last black row of first area
+			black_line_start = checkRA;
+			black_end = checkRA;
+			for(int black = checkRA-1; black>0; black--){
+				int count=0;
+				for(int pixels=0; pixels<WIDTH; pixels++){
+					if(!bitmap[black][pixels])
+						count++;
+				}
+				if(count==WIDTH-5){
+					black_end = black;
+					break;
+				}
+				if(black==0){
+					black_end=0;
+				}
+			}
+			for(int black = black_line_start+1; black<HEIGHT; black++){
+				int count=0;
+				for(int pixels=0; pixels<WIDTH; pixels++){
+					if(!bitmap[black][pixels])
+						count++;
+				}
+				if(count>WIDTH/4){
+					black_line_end = black-1;
+					break;
+				}
+				if(black==HEIGHT)
+					black_line_end = HEIGHT;
+			}
+			//get those margin back!!!
+
 		}
-		 */
-	}
 
-
-//	//for row between suspected cross road
-//	for(Uint r=start_row; r<end_row; r++){
-//		//check white across width
-//		if(abs(margin[r][1]-margin[r][0])>WIDTH-10)
-//			white_count++;
-//	}
-
-	//check Q / cross road
-	//find first white row
-	//start from bottom (avoid noise at top)
-
-	//if it start from white row, up until black line
-	white_start = HEIGHT;
-	if(abs(margin[white_start][1]-margin[white_start][0])>RE-10){
-		while((abs(margin[white_start][1]-margin[white_start][0])>RE-5) && white_start<end_row){
-			white_start--;
+		if(white_end>white_start)
+		{
+			white_count = white_end - white_start;
 		}
-	}
-	//else it start from normal/black,up until white & up until black
-	else{
-		while(!(abs(margin[white_start][1]-margin[white_start][0])>RE-5) && white_start<end_row){
-			white_start--;
-		}
-		while((abs(margin[white_start][1]-margin[white_start][0])>RE-5) && white_start<end_row){
-			white_start--;
-		}
-	}
-	white_end = white_start;
-	while((abs(margin[white_end][1]-margin[white_end][0])>RE-10) && white_start<end_row){
-		white_end++;
-	}
-
-//	int left_white=0;
-//	int right_white=0;
-	Qr = false;
-
-	if(white_end>white_start)
-	{
-
-		for(Uint r=white_start; r<white_end; r++){
-			//check white across width
-			if(abs(margin[r][1]-margin[r][0])>WIDTH-10)
-				white_count++;
-		}
-	}
-	else
-		white_count = 0;
-
-	//find last black row
-	black_end = 0;
-	for(int black = white_start; black>0; black--){
-		//count black pixels in row
-		int black_pixel =0;
-		for(int bp=0; bp<RE; bp++){
-			if(bitmap[black][bp])
-				black_pixel++;
-		}
-		//if black > threshold, consider as black row
-		if(black_pixel>WIDTH*3/4){
-			black_end = black;
-			break;
-		}
-	}
-	//if distance between last black row & first white row < threshold, consider as Q
-	// or black count > threshold, consider as Q
-//	if(abs(black_end-white_start)<HEIGHT/8 || black_count>HEIGHT/3){
-//		Q = true;
-//	}
-	if(black_end>HEIGHT/2){
-		Q = true;
-	}
-	//ensure there are few rows of white
-	else if(white_count >HEIGHT/12 && white_count <HEIGHT/2){
-		crossroad = true;
-	}
-	//to be safe
-	else
-	{
-		Q = false;
-		crossroad = false;
-	}
-
-	if(Q){
-		if(bitmap[black_end+1][RE]) //if right is black
-			Qr = false;
 		else
-			Qr = true;
-	}
+			white_count = 0;
 
-	//going out if going_out > threshold
-	if (l_going_out>HEIGHT*2/3){
-		l_byebye = true;
-	}
-	if(r_going_out>HEIGHT*2/3){
-		r_byebye = true;
-	}
+		//if distance between last black row & first white row < threshold, consider as Q
+		// or black count > threshold, consider as Q
 
-	//calculate midpoint
-	for(int k=0; k<HEIGHT; k++){
-		midpoint[k] = (margin[k][0]+margin[k][1])/2;
-	}
+		if(black_end>HEIGHT/4 &&!black_line){ //right angle?
+			int prev_white_count = data[black_end+1][WHITECOUNT];
+			for(int i=black_end+2; i<HEIGHT; i++){
+				if(abs(data[i][WHITECOUNT]-prev_white_count)>WIDTH/3 && data[black_end+HEIGHT/12][WHITECOUNT]>WIDTH/2){
+					right_angle=true;
+					break;
+				}
+			}
+		}
+		//ensure there are few rows of white
+		else if(black_end<HEIGHT/12 && white_count >5){
+			crossroad = true;
+		}
+		//going out if going_out > threshold
+		else if (l_going_out-black_end>HEIGHT*2/3){
+			l_byebye = true;
+		}
+		else if(r_going_out-black_end>HEIGHT*2/3){
+			r_byebye = true;
+		}
+		//to be safe
+		else
+		{
+			Qr=false;
+			right_angle = false;
+			crossroad = false;
+		}
+
+		if(right_angle){
+
+			if(data[black_end+1][WHITEAT]==LEFT) //if right is black
+				Qr = false;
+			else
+				Qr = true;
+		}
 
 }
 
 //calculate sum of midpoint in [start, end]
-double ImageProcess::MidpointSumCal(Uint start, Uint end){
+double ImageProcess::MidpointSumCal(uint16_t start, uint16_t end){
 	double sum = 0;
 
-	for(Uint k=start; k<end; k++){
+	for(uint16_t k=start; k<end; k++){
 		sum += midpoint[k];
 	}
 
@@ -268,28 +367,65 @@ double ImageProcess::MidpointSumCal(Uint start, Uint end){
 //decide what result to return
 int ImageProcess::Analyze(void){
 
-	double error = MIDPOINT - MidpointSumCal(28,38)/10;
+	double error = MIDPOINT - MidpointSumCal(CS,CE)/10;
 
 	if(r_byebye)
+	{
+		STATE = OUT_OF_BOUND;
 		return 10000;
+	}
 	else if(l_byebye)
+	{
+
+		STATE = OUT_OF_BOUND;
 		return -10000;
-//	else if(black_end>HEIGHT/2){
-//		return error*(FACTOR*1.2);
-//	}
-	else if (Q){
+	}
+	else if (right_angle){
+		STATE = RIGHT_ANGLE;
 		if(Qr){
 			return -10000; //turn right
 		}
 		else{
 			return 10000; //turn left
 		}
+//		return error*FACTOR;
 	}
+	else if (crossroad)
+	{
+		STATE = CROSSROAD;
+		return (MIDPOINT - MidpointSumCal(libutil::Clamp(0,(int)white_start-1,60),libutil::Clamp(0,(int)white_start-11,60)))*FACTOR/10;
+	}
+//	else if(black_line){
+////		return 0;
+////		return (MIDPOINT - MidpointSumCal(libutil::Clamp(0,(int)black_line_end+1,60),libutil::Clamp(0,(int)black_line_end+11,60))/10)*FACTOR;
+////		if(white_end-white_start>10){
+////			return (MIDPOINT - MidpointSumCal(libutil::Clamp(0,(int)white_start,60),libutil::Clamp(0,(int)white_start+10,60))/10)*FACTOR;
+////		}
+////		if((black_line_start>(CS-20)&&black_line_start<(CE+20))||(black_line_end>(CS-20)&&black_line_end<(CE+20))){
+////			return 0;
+////		}
+//		if(black_line_end>CS-15){
+//			return 0;
+//		}
+//		else{
+//			return error*FACTOR;
+//		}
+//	}
 	else if ((error>2||error<-2) && !crossroad)
+	{
+		STATE = TURNING;
 		//*FACTOR as error is too small
 		return error*FACTOR;
+	}
+//	else if(black_end>HEIGHT*5/6){
+////		return -error*10000;
+//		return 0;
+//	}
 	else
+	{
+		STATE = STRAIGHT;
 		return 0;
+	}
 }
 
 

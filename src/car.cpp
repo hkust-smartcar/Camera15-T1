@@ -12,6 +12,7 @@
 #include <libsc/battery_meter.h>
 #include <libsc/button.h>
 #include <libsc/dir_motor.h>
+#include <libsc/alternate_motor.h>
 #include <libsc/futaba_s3010.h>
 #include <libsc/k60/jy_mcu_bt_106.h>
 #include <libsc/k60/led.h>
@@ -27,8 +28,8 @@ using namespace libutil;
 
 
 #define SERVO_ERR 1350
-#define SERVO_MID_DEGREE 9500
-#define SERVO_AMPLITUDE 3700
+#define SERVO_MID_DEGREE 9500 //9500
+#define SERVO_AMPLITUDE 4300 //3700
 
 namespace camera
 {
@@ -106,6 +107,13 @@ DirMotor::Config GetMotorConfig(const uint8_t id)
 	return product;
 }
 
+//AlternateMotor::Config GetMotorConfig(const uint8_t id)
+//{
+//	AlternateMotor::Config product;
+//	product.id = id;
+//	return product;
+//}
+
 FutabaS3010::Config GetServoConfig()
 {
 	FutabaS3010::Config product;
@@ -135,6 +143,7 @@ Car::Car()
 		  m_leds{libsc::Led(GetLedConfig(0)), libsc::Led(GetLedConfig(1)), libsc::Led(GetLedConfig(2)),
 					libsc::Led(GetLedConfig(3))},
 		  m_motors{DirMotor(GetMotorConfig(0)), DirMotor(GetMotorConfig(1))},
+//		  m_motors{AlternateMotor(GetMotorConfig(0)),AlternateMotor(GetMotorConfig(1))},
 		  m_servo(GetServoConfig())
 //		  m_uart(GetUartConfig())
 {

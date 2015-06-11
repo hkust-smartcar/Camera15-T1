@@ -50,6 +50,7 @@ void CarTestApp::Run()
 
 
 	Looper looper;
+	int ec=0;
 
 	looper.Repeat(199, std::bind(&libsc::Led::Switch, &car->GetLed(0)), Looper::RepeatMode::kLoose);
 
@@ -65,10 +66,11 @@ void CarTestApp::Run()
 				[&](const Timer::TimerInt request, const Timer::TimerInt)
 			{
 				car->UpdateAllEncoders();
+				ec+=car->GetEncoderCount(1);
 				car->GetLcd().SetRegion({0, 144, St7735r::GetW(),
 						LcdTypewriter::GetFontH()});
 				writer.WriteString(String::Format("%ld, %ld\n",
-						car->GetEncoderCount(0), car->GetEncoderCount(1)).c_str());
+						car->GetEncoderCount(0), ec).c_str());
 			};
 	looper.Repeat(19, encoder, Looper::RepeatMode::kPrecise);
 
@@ -85,8 +87,8 @@ void CarTestApp::Run()
 			car->GetLcd().FillBits(0, 0xFFFF, image2.get(),
 					car->GetCameraW() * car->GetCameraH());
 
-//			car->SetMotorPower(0,300);
-//			car->SetMotorPower(1,300);
+//			car->SetMotorPower(0,200);
+//			car->SetMotorPower(1,200);
 		}
 
 		looper.Once();

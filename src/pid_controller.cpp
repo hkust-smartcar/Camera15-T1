@@ -88,6 +88,7 @@ float PIDhandler::updatePID_ori(float val)
 	float dE = (error - lastError) / dt;
 	lastError = error;
 
+
 	output = *Kp * lastError/* - *Kp * lastError * abs(lastError)*/ + *Ki * eSum + *Kd * dE;
 
 	lastTimeUpdate = System::Time();

@@ -37,9 +37,13 @@ Mcg::Config Mcg::GetMcgConfig()
 
 int main()
 {
+	for(long i = 0; i < 100000; i++){
+		__asm__ __volatile__("nop");
+	}
 	LIBSC_GUARD();
 
 	libsc::System::Init();
+
 
 	Car car;
 	SystemRes res;

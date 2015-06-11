@@ -14,6 +14,7 @@
 #include <libsc/battery_meter.h>
 #include <libsc/button.h>
 #include <libsc/dir_motor.h>
+#include <libsc/alternate_motor.h>
 #include <libsc/futaba_s3010.h>
 #include <libsc/joystick.h>
 #include <libsc/k60/jy_mcu_bt_106.h>
@@ -104,6 +105,12 @@ public:
 		return m_motors[id];
 	}
 
+//	libsc::AlternateMotor& GetMotor(const uint8_t id)
+//	{
+//		return m_motors[id];
+//	}
+
+
 	libsc::FutabaS3010& GetServo()
 	{
 		return m_servo;
@@ -156,6 +163,7 @@ private:
 	libsc::St7735r m_lcd;
 	libsc::Led m_leds[4];
 	libsc::DirMotor m_motors[2];
+//	libsc::AlternateMotor m_motors[2];
 	libsc::FutabaS3010 m_servo;
 //	libsc::k60::JyMcuBt106 m_uart;
 };

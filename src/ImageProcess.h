@@ -10,11 +10,20 @@
 #include <algorithm>
 #include "libsc/k60/jy_mcu_bt_106.h"
 
+#include "distortion.h"
 #pragma once
 
 
 #define HEIGHT 60
 #define WIDTH 80
+
+#define INIT_STATE 	 0;
+#define STRAIGHT 	 1;
+#define CROSSROAD 	 2;
+#define RIGHT_ANGLE  3;
+#define Q_TURN 		 4;
+#define TURNING 	 5;
+#define OUT_OF_BOUND 6;
 
 using namespace libsc::k60;
 using namespace libsc;
@@ -29,36 +38,49 @@ public:
 	void start(Byte* image);
 
 	int Analyze(void);
-	double MidpointSumCal(Uint start, Uint end);
-	void MedianFilter(bool* array_row, int length);
-
+	double MidpointSumCal(uint16_t start, uint16_t end);
 	~ImageProcess()
 	{}
 
 	bool bitmap[60][80];
-	Uint margin[60][2];
-	Uint midpoint[60];
-	Uint MIDPOINT = 37;
+	uint16_t margin[60][2];
+	uint16_t midpoint[60];
+	uint16_t MIDPOINT = 37;
 
 	int16_t black_count = 0;
 	int16_t white_count = 0;
 	//for amplifying error
-	Uint FACTOR = 100;
+	uint16_t FACTOR = 100;
 
 	//Q & cross road
-	Uint start_row = 0;
-	Uint end_row = HEIGHT;
+	uint16_t start_row = 0;
+	uint16_t end_row = HEIGHT;
 
-	Uint black_end = 0;
-	Uint white_start  = HEIGHT;
-	Uint white_end = HEIGHT;
+	uint16_t black_end = 0;
+	uint16_t checkRA = 0;
+	uint16_t white_start  = HEIGHT;
+	uint16_t white_end = HEIGHT;
+	uint16_t black_line_start = 0;
+	uint16_t black_line_end = 0;
+
+	int16_t data[60][4]; //[0]: number of white pixels; [1]: white row; [2]: black row; [3]: more white at left(0)/right(1)
+
 
 	//indicate situation
-	bool Q = false;
 	bool Qr = false;
 	bool crossroad = false;
 	bool l_byebye = false;
 	bool r_byebye = false;
+	bool right_angle = false;
+	bool black_line = true;
+
+	//State
+	int STATE = 0;
+
+	//distortion
+	distortion dis;
+
+
 };
 }
 
