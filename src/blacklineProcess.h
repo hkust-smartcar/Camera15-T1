@@ -16,18 +16,30 @@ using namespace libsc;
 using namespace std;
 
 #define RS 0	//row start
-#define RE 80	//row end
+#define RE 79	//row end
+
+#define HEIGHT 60
+#define WIDTH 80
+
+
+#define LEFT 0
+#define RIGHT 1
 
 namespace camera
 {
 class blacklineProcess{
 
 public:
-	blacklineProcess(){}
+	blacklineProcess()
+	{}
 	~blacklineProcess(){}
 
 	int16_t Analyze(bool binary[60][80]);
-	int16_t midpoint[60];
+	bool detected();
+
+	uint16_t midpoint[60];
+	uint16_t margin[60][2];
+	uint16_t narrow_count=0;
 
 };
 }

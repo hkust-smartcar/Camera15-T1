@@ -117,11 +117,11 @@ void ImageProcess::start(Byte* image){
 		int lwc = 0;
 		int rwc = 0;
 		for(int i = RS; i<RE/2; i++){
-			if(!bitmap[row][i]) //if black
+			if(!bitmap[row][i]) //if white
 				lwc++;
 		}
 		for(int i = RE/2; i<RE; i++){
-			if(!bitmap[row][i]) //if black
+			if(!bitmap[row][i]) //if white
 				rwc++;
 		}
 		if(rwc>lwc){
@@ -290,30 +290,33 @@ void ImageProcess::start(Byte* image){
 
 	//for black guide line
 	//find range of "almost" white row
-	almost_white_number = 0;
-	int check_nearly_white_margin = 0;
-	for(int white = HEIGHT/2; white>0; white--){
-		uint16_t wc = 0;
-		for(int c=0; c<RE; c++){
-			if(!bitmap[white][c])
-				wc++;
-		}
-		if(wc>WIDTH-20 && data[white][ISWHITE] == 0){
-			almost_white_number++;
-		}
-	}
-	for(int white = HEIGHT/2; white<HEIGHT; white++){
-		if(margin[white][0]-MIDPOINT_REF<5 || margin[white][1]-MIDPOINT_REF<5){
-			check_nearly_white_margin++;
-		}
-	}
+//	almost_white_number = 0;
+//	int check_nearly_white_margin = 0;
+//	for(int white = HEIGHT/2; white>0; white--){
+//		uint16_t wc = 0;
+//		for(int c=0; c<RE; c++){
+//			if(!bitmap[white][c])
+//				wc++;
+//		}
+//		if(wc>WIDTH-20 && data[white][ISWHITE] == 0){
+//			almost_white_number++;
+//		}
+//	}
+//	for(int white = HEIGHT/2; white<HEIGHT; white++){
+//		if(margin[white][0]-MIDPOINT_REF<5 || margin[white][1]-MIDPOINT_REF<5){
+//			check_nearly_white_margin++;
+//		}
+//	}
 //	for(int white = HEIGHT-1; white>HEIGHT/2; white--){
 //			if(data[white][WHITECOUNT]<WIDTH/2){
 //				almost_white_number++;
 //			}
 //		}
 
-	if(black_end>HEIGHT/4 &&!black_line){ //right angle?
+	if(blp.detected()){
+		bg = true;
+	}
+	else if(black_end>HEIGHT/4 &&!black_line){ //right angle?
 
 		float h1 = HEIGHT-1;
 		float h2 = black_end+2;
@@ -332,9 +335,7 @@ void ImageProcess::start(Byte* image){
 		crossroad = true;
 	}
 	//black guide line?
-	else if(black_end<HEIGHT/4 && almost_white_number > 5 && check_nearly_white_margin>HEIGHT/3){
-		bg = true;
-	}
+//	else if(black_end<HEIGHT/4 && almost_white_number > 5 && check_nearly_white_margin>HEIGHT/3){
 	//going out if going_out > threshold
 	else if (l_going_out-black_end>HEIGHT*2/3){
 		l_byebye = true;
@@ -368,11 +369,11 @@ int ImageProcess::Analyze(void){
 
 	double error = MIDPOINT_REF - MidpointSumCal(CS,CE)/10;
 
-//	if(bg){
-//		return blp.Analyze(bitmap);
-//	}
-//
-//	else
+	if(bg){
+		return blp.Analyze(bitmap);
+	}
+
+	else
 		if(r_byebye)
 	{
 		STATE = OUT_OF_BOUND;
