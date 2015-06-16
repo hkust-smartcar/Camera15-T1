@@ -20,7 +20,7 @@
 
 using namespace std;
 using namespace libsc::k60;
-using namespace libutil;
+
 
 namespace camera
 {
@@ -42,19 +42,16 @@ private:
 	float s_kp;
 	float s_ki;
 	float s_kd;
-//	float SKP;
-//	float SKD;
 
 	float s_setpoint;
 
 	//kp, ki, kd and setpoint for motor
 	float l_kp;
-	float r_kp;
-
 	float l_ki;
-	float r_ki;
-
 	float l_kd;
+
+	float r_kp;
+	float r_ki;
 	float r_kd;
 
 	float l_m_setpoint;
@@ -67,7 +64,6 @@ private:
 	int16_t s_degree;
 	int16_t s_result;
 	float show_error;
-	float forCon;
 
 	//motor_pid
 	int16_t ec0, ec1;
@@ -96,11 +92,9 @@ private:
 	bool m_is_stop;
 	EmergencyStopState m_emergency_stop_state;
 
-	int16_t damnit;
-
 	static void PeggyListener(const std::vector<Byte> &bytes);
 	void printResult();
-	void updateSPD(float error);
+//	void updateSPD(float error);
 	void peggy(libbase::k60::Pit* pit);
 	void DetectEmergencyStop();
 

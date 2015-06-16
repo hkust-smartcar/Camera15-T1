@@ -33,15 +33,6 @@
 
 #include "libbase/k60/clock_utils.h"
 
-#define INIT_STATE 	 0;
-#define STRAIGHT 	 1;
-#define CROSSROAD 	 2;
-#define RIGHT_ANGLE  3;
-#define Q_TURN 		 4;
-#define TURNING 	 5;
-#define OUT_OF_BOUND 6;
-
-
 using namespace libsc;
 using namespace libsc::k60;
 using namespace libutil;
@@ -54,7 +45,13 @@ RunTestApp *m_instance;
 
 RunTestApp::RunTestApp(SystemRes *res)
 : App(res),
-  imageProcess(),
+
+  s_kp(0.4f), //0.4, 0.03
+  s_ki(0.0f),
+  s_kd(0.045f),
+
+  s_setpoint(0.0f),
+
   //19ms
   l_kp(0.0125f),
   l_ki(0.0f),
@@ -64,32 +61,24 @@ RunTestApp::RunTestApp(SystemRes *res)
   r_ki(0.0f),
   r_kd(0.0004f),
 
-//  SKP(0.491f),
-//  SKD(0.003f),
-
-  s_kp(0.4f), //0.4, 0.03
-  s_ki(0.0f),
-  s_kd(0.045f),
-  show_error(0.0),
-
-  m_start(0),
-  m_is_stop(false),
-
   //19 ms
   l_m_setpoint(2000.0f), //2900
   r_m_setpoint(2000.0f),
 
   sd_setpoint(2000),
 
-  s_setpoint(0.0f),
 
+  show_error(0.0),
+
+  servo_Control(&s_setpoint, &s_kp, &s_ki, &s_kd, -1000, 1000),
   l_speedControl(&l_m_setpoint, &l_kp, &l_ki, &l_kd, 0, 950),
   r_speedControl(&r_m_setpoint, &r_kp, &r_ki, &r_kd, 0, 950),
-  servo_Control(&s_setpoint, &s_kp, &s_ki, &s_kd, -1000, 1000),
 
-  damnit(imageProcess.MIDPOINT),
+  m_peter(),
 
-  m_peter()
+  m_start(0),
+  m_is_stop(false)
+
 {
 	//raw data: left & right encoder, servo angle
 	ec0 = 0;
@@ -108,7 +97,6 @@ RunTestApp::RunTestApp(SystemRes *res)
 //for grapher use
 	m_peter.addWatchedVar(&sd_setpoint);
 	m_peter.addWatchedVar(&show_error);
-	m_peter.addWatchedVar(&damnit);
 
 // servo
 	m_peter.addSharedVar(&s_kp,"skp");
@@ -118,9 +106,9 @@ RunTestApp::RunTestApp(SystemRes *res)
 	m_peter.Init(&PeggyListener);
 }
 
-void RunTestApp::updateSPD(float error){
-
-}
+//void RunTestApp::updateSPD(float error){
+//
+//}
 
 void RunTestApp::DetectEmergencyStop(){
 
@@ -136,7 +124,7 @@ void RunTestApp::DetectEmergencyStop(){
 
 	const int count = car->GetEncoderCount(0);
 	const int count2 = car->GetEncoderCount(1);
-	if (!is_startup && (abs(count) < 30 || abs(count2) <30))
+	if (!is_startup && (abs(count) + abs(count2) < 100))
 	{
 		if (m_emergency_stop_state.is_triggered)
 		{
@@ -156,25 +144,6 @@ void RunTestApp::DetectEmergencyStop(){
 	{
 		m_emergency_stop_state.is_triggered = false;
 	}
-
-}
-
-libbase::k60::Pit::Config GetPitConfig(const uint8_t pit_channel,
-		const Pit::OnPitTriggerListener &isr)
-{
-	Pit::Config config;
-	config.channel = pit_channel;
-	config.count = ClockUtils::GetBusTickPerMs() * 1000;
-	config.isr = isr;
-	return config;
-}
-
-void RunTestApp::peggy(libbase::k60::Pit*)
-{
-
-	Car *car = GetSystemRes()->car;
-	car->GetLed(2).Switch();
-
 
 }
 
@@ -247,7 +216,7 @@ void RunTestApp::Run()
 
 		//start image processing
 		imageProcess.start(image2.get());
-		printResult();
+//		printResult();
 
 		//set angle with servo PID controller and image process result
 		//negative for correcting direction
@@ -263,12 +232,16 @@ void RunTestApp::Run()
 //		}
 
 		show_error = error;//abs((int)(error/1000));
-		damnit = imageProcess.MIDPOINT;
 		s_result = (int16_t)servo_Control.updatePID_ori(-error);
 		car->SetTurning(s_result);
+		if(abs(s_result)<10000){
 		l_m_setpoint =  (float)software_differential.turn_left_encoder(sd_setpoint,car->GetServo().GetDegree(),9500,3700);
 		r_m_setpoint = (float) software_differential.turn_right_encoder(sd_setpoint,car->GetServo().GetDegree(),9500,3700);
-
+		}
+		else{
+			l_m_setpoint =  sd_setpoint;
+			r_m_setpoint = sd_setpoint;
+		}
 	};
 	looper.Repeat(11, servo, Looper::RepeatMode::kPrecise);
 
@@ -315,46 +288,46 @@ void RunTestApp::printResult(){
 
 	//print midpoint
 	for(uint16_t i=0; i<car->GetCameraH(); i++){
-			car->GetLcd().SetRegion({imageProcess.MIDPOINT, i, 1, 1});
+			car->GetLcd().SetRegion({MIDPOINT_REF, i, 1, 1});
 			car->GetLcd().FillColor(St7735r::kCyan);
 	}
 
-//	for(uint16_t i=0; i<car->GetCameraH(); i++){
+	for(uint16_t i=0; i<car->GetCameraH(); i++){
+
+		car->GetLcd().SetRegion({imageProcess.midpoint[i], i, 1, 1});
+		car->GetLcd().FillColor(St7735r::kRed);
+	}
+//	if (imageProcess.crossroad)
+//		{
 //
-//		car->GetLcd().SetRegion({imageProcess.midpoint[i], i, 1, 1});
-//		car->GetLcd().FillColor(St7735r::kRed);
+//		for(uint16_t i=libutil::Clamp(0,(int)(imageProcess.white_start-1),60); i<libutil::Clamp(0,(int)imageProcess.white_start-11,60); i++){
+//			car->GetLcd().SetRegion({imageProcess.midpoint[i], i, 1, 1});
+//			car->GetLcd().FillColor(St7735r::kRed);
+//		}
+//
+//		}
+//	else if(imageProcess.black_line){
+//		if(imageProcess.white_end-imageProcess.white_start>10){
+//			for(uint16_t i=libutil::Clamp(0,(int)(imageProcess.black_line_end+1),60); i<libutil::Clamp(0,(int)imageProcess.black_line_end+11,60); i++){
+//				car->GetLcd().SetRegion({imageProcess.midpoint[i], i, 1, 1});
+//				car->GetLcd().FillColor(St7735r::kRed);
+//			}
+//		}
+//		else{
+//			for(uint16_t i=35; i<45; i++){
+//				car->GetLcd().SetRegion({imageProcess.midpoint[i], i, 1, 1});
+//				car->GetLcd().FillColor(St7735r::kRed);
+//			}
+//		}
+//
 //	}
-	if (imageProcess.crossroad)
-		{
-
-		for(uint16_t i=libutil::Clamp(0,(int)(imageProcess.white_start-1),60); i<libutil::Clamp(0,(int)imageProcess.white_start-11,60); i++){
-			car->GetLcd().SetRegion({imageProcess.midpoint[i], i, 1, 1});
-			car->GetLcd().FillColor(St7735r::kRed);
-		}
-
-		}
-	else if(imageProcess.black_line){
-		if(imageProcess.white_end-imageProcess.white_start>10){
-			for(uint16_t i=libutil::Clamp(0,(int)(imageProcess.black_line_end+1),60); i<libutil::Clamp(0,(int)imageProcess.black_line_end+11,60); i++){
-				car->GetLcd().SetRegion({imageProcess.midpoint[i], i, 1, 1});
-				car->GetLcd().FillColor(St7735r::kRed);
-			}
-		}
-		else{
-			for(uint16_t i=35; i<45; i++){
-				car->GetLcd().SetRegion({imageProcess.midpoint[i], i, 1, 1});
-				car->GetLcd().FillColor(St7735r::kRed);
-			}
-		}
-
-	}
-	else
-	{
-		for(uint16_t i=35; i<45; i++){
-			car->GetLcd().SetRegion({imageProcess.midpoint[i], i, 1, 1});
-			car->GetLcd().FillColor(St7735r::kRed);
-		}
-	}
+//	else
+//	{
+//		for(uint16_t i=35; i<45; i++){
+//			car->GetLcd().SetRegion({imageProcess.midpoint[i], i, 1, 1});
+//			car->GetLcd().FillColor(St7735r::kRed);
+//		}
+//	}
 
 	//print Q and cross road related info
 
@@ -377,12 +350,19 @@ void RunTestApp::printResult(){
 	car->GetLcd().SetRegion({0, 64, St7735r::GetW(), LcdTypewriter::GetFontH()});
 	writer.WriteString(String::Format("%ld, %ld, %ld,%ld\n",imageProcess.black_end, imageProcess.checkRA, imageProcess.white_start, imageProcess.white_end).c_str());
 
-	car->GetLcd().SetRegion({0, 96, St7735r::GetW(), LcdTypewriter::GetFontH()});
-	if(imageProcess.Qr){
-		writer.WriteString("QrQrQr");
+	car->GetLcd().SetRegion({0, 80, St7735r::GetW(), LcdTypewriter::GetFontH()});
+	if(imageProcess.black_line){
+		writer.WriteString(String::Format("BLBLBL: %ld, %ld",imageProcess.black_line_start, imageProcess.black_line_end).c_str());
 	}
 	else
-		writer.WriteString("!Qr!Qr!Qr");
+		writer.WriteString(String::Format("!BL!BL!BL: %ld, %ld",imageProcess.black_line_start, imageProcess.black_line_end).c_str());
+
+	car->GetLcd().SetRegion({0, 96, St7735r::GetW(), LcdTypewriter::GetFontH()});
+	if(imageProcess.bg){
+		writer.WriteString(String::Format("BGBGBG: %ld",imageProcess.almost_white_number).c_str());
+	}
+	else
+		writer.WriteString(String::Format("!BG!BG!BG: %ld",imageProcess.almost_white_number).c_str());
 
 	car->GetLcd().SetRegion({0, 112, St7735r::GetW(), LcdTypewriter::GetFontH()});
 	if(imageProcess.crossroad){
@@ -401,7 +381,9 @@ void RunTestApp::printResult(){
 	}
 
 	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,144, St7735r::GetW(),LcdTypewriter::GetFontH()));
-	writer.WriteString(String::Format("%ld, %ld\n",imageProcess.black_line_start, imageProcess.black_line_end).c_str());
+//	writer.WriteString(String::Format("%ld, %ld\n",imageProcess.black_line_start, imageProcess.black_line_end).c_str());
+//	writer.WriteString(String::Format("%f",imageProcess.slope).c_str());
+	writer.WriteString(String::Format("%ld",imageProcess.Analyze()).c_str());
 }
 
 RunTestApp &getInstance(void)

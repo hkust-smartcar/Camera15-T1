@@ -9,6 +9,7 @@
 #include <libsc/system.h>
 #include <algorithm>
 #include "libsc/k60/jy_mcu_bt_106.h"
+#include "blacklineProcess.h"
 
 #include "distortion.h"
 #pragma once
@@ -17,17 +18,19 @@
 #define HEIGHT 60
 #define WIDTH 80
 
-#define INIT_STATE 	 0;
-#define STRAIGHT 	 1;
-#define CROSSROAD 	 2;
-#define RIGHT_ANGLE  3;
-#define Q_TURN 		 4;
-#define TURNING 	 5;
-#define OUT_OF_BOUND 6;
+#define INIT_STATE 	 0
+#define STRAIGHT 	 1
+#define CROSSROAD 	 2
+#define RIGHT_ANGLE  3
+#define Q_TURN 		 4
+#define TURNING 	 5
+#define OUT_OF_BOUND 6
+#define MIDPOINT_REF 37
 
 using namespace libsc::k60;
 using namespace libsc;
 using namespace std;
+using namespace libutil;
 
 
 namespace camera
@@ -45,37 +48,40 @@ public:
 	bool bitmap[60][80];
 	uint16_t margin[60][2];
 	uint16_t midpoint[60];
-	uint16_t MIDPOINT = 37;
 
-	int16_t black_count = 0;
-	int16_t white_count = 0;
+	int16_t black_count;
+	int16_t white_count;
 	//for amplifying error
-	uint16_t FACTOR = 100;
+	uint16_t FACTOR;
 
-	//Q & cross road
-	uint16_t start_row = 0;
-	uint16_t end_row = HEIGHT;
+	//black line & cross road
 
-	uint16_t black_end = 0;
-	uint16_t checkRA = 0;
-	uint16_t white_start  = HEIGHT;
-	uint16_t white_end = HEIGHT;
-	uint16_t black_line_start = 0;
-	uint16_t black_line_end = 0;
+	uint16_t black_end;
+	uint16_t checkRA;
+	uint16_t white_start;
+	uint16_t white_end;
+	uint16_t black_line_start;
+	uint16_t black_line_end;
+
+	float slope;
 
 	int16_t data[60][4]; //[0]: number of white pixels; [1]: white row; [2]: black row; [3]: more white at left(0)/right(1)
 
 
 	//indicate situation
-	bool Qr = false;
-	bool crossroad = false;
-	bool l_byebye = false;
-	bool r_byebye = false;
-	bool right_angle = false;
-	bool black_line = true;
+	bool crossroad;
+	bool l_byebye;
+	bool r_byebye;
+	bool right_angle;
+	bool black_line;
+	bool bg;
+
+	//black guide line
+	blacklineProcess blp;
+	uint16_t almost_white_number;
 
 	//State
-	int STATE = 0;
+	int STATE;
 
 	//distortion
 	distortion dis;
