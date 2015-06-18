@@ -216,7 +216,7 @@ void RunTestApp::Run()
 		//start image processing
 		imageProcess.start(image2.get());
 		imageProcess.blp.Analyze(imageProcess.bitmap);
-		printResult();
+//		printResult();
 
 		//set angle with servo PID controller and image process result
 		//negative for correcting direction
@@ -269,28 +269,28 @@ void RunTestApp::printResult(){
 	LcdTypewriter writer(writer_conf);
 
 	//print filtered image
-	for(uint16_t i=0; i<car->GetCameraH(); i++)
+	for(uint16_t i=CS; i<CE; i++)
 	{
 		bool* ptr = imageProcess.bitmap[i];
-		car->GetLcd().SetRegion(libsc::Lcd::Rect(0,i,car->GetCameraW(),1));
-		car->GetLcd().FillBits(0,0xFFFF,ptr,car->GetCameraW());
+		car->GetLcd().SetRegion(libsc::Lcd::Rect(0,i,WIDTH,1));
+		car->GetLcd().FillBits(0,0xFFFF,ptr,WIDTH);
 	}
 
 	//
 	// print margin found
-	for(uint16_t i=0; i<car->GetCameraH(); i++)
-	{
-		car->GetLcd().SetRegion({imageProcess.margin[i][0], i, 1, 1});
-		car->GetLcd().FillColor(St7735r::kBlue);
-		car->GetLcd().SetRegion({imageProcess.margin[i][1], i, 1, 1});
-		car->GetLcd().FillColor(St7735r::kBlue);
-	}
+//	for(uint16_t i=CS; i<CE; i++)
+//	{
+//		car->GetLcd().SetRegion({imageProcess.margin[i][0], i, 1, 1});
+//		car->GetLcd().FillColor(St7735r::kBlue);
+//		car->GetLcd().SetRegion({imageProcess.margin[i][1], i, 1, 1});
+//		car->GetLcd().FillColor(St7735r::kBlue);
+//	}
 	//
 	//
 
 	// print margin found
-	for(uint16_t i=0; i<car->GetCameraH(); i++)
-	{
+	for(uint16_t i=CS; i<CE; i++){
+
 		car->GetLcd().SetRegion({imageProcess.blp.margin[i][0], i, 1, 1});
 		car->GetLcd().FillColor(St7735r::kYellow);
 		car->GetLcd().SetRegion({imageProcess.blp.margin[i][1], i, 1, 1});
@@ -298,27 +298,28 @@ void RunTestApp::printResult(){
 	}
 
 //	car->GetLcd().SetRegion({0, 64, St7735r::GetW(), LcdTypewriter::GetFontH()});
-//	writer.WriteString(String::Format("%ld, %ld\n",imageProcess.blp.margin[10][0], imageProcess.blp.margin[10][1]).c_str());
+//	writer.WriteString(String::Format("%ld,%ld",imageProcess.blp.margin[50][0],imageProcess.blp.margin[50][1]).c_str());
+////	writer.WriteString(String::Format("%ld, %ld\n",imageProcess.blp.margin[10][0], imageProcess.blp.margin[10][1]).c_str());
+////
+////	car->GetLcd().SetRegion({0, 80, St7735r::GetW(), LcdTypewriter::GetFontH()});
+////	writer.WriteString(String::Format("%ld, %ld\n",imageProcess.blp.margin[20][0], imageProcess.blp.margin[20][1]).c_str());
+////
+////	car->GetLcd().SetRegion({0, 96, St7735r::GetW(), LcdTypewriter::GetFontH()});
+////	writer.WriteString(String::Format("%ld, %ld\n",imageProcess.blp.margin[30][0], imageProcess.blp.margin[30][1]).c_str());
+////
+////	car->GetLcd().SetRegion({0, 112, St7735r::GetW(), LcdTypewriter::GetFontH()});
+////	writer.WriteString(String::Format("%ld, %ld\n",imageProcess.blp.margin[40][0], imageProcess.blp.margin[40][1]).c_str());
+////	//
 //
-//	car->GetLcd().SetRegion({0, 80, St7735r::GetW(), LcdTypewriter::GetFontH()});
-//	writer.WriteString(String::Format("%ld, %ld\n",imageProcess.blp.margin[20][0], imageProcess.blp.margin[20][1]).c_str());
-//
-//	car->GetLcd().SetRegion({0, 96, St7735r::GetW(), LcdTypewriter::GetFontH()});
-//	writer.WriteString(String::Format("%ld, %ld\n",imageProcess.blp.margin[30][0], imageProcess.blp.margin[30][1]).c_str());
-//
-//	car->GetLcd().SetRegion({0, 112, St7735r::GetW(), LcdTypewriter::GetFontH()});
-//	writer.WriteString(String::Format("%ld, %ld\n",imageProcess.blp.margin[40][0], imageProcess.blp.margin[40][1]).c_str());
 //	//
-
-	//
-
+//
  	 //print midpoint
-	for(uint16_t i=0; i<car->GetCameraH(); i++){
+	for(uint16_t i=CS; i<CE; i++){
 			car->GetLcd().SetRegion({MIDPOINT_REF, i, 1, 1});
 			car->GetLcd().FillColor(St7735r::kCyan);
 	}
 
-	for(uint16_t i=0; i<car->GetCameraH(); i++){
+	for(uint16_t i=CS; i<CE; i++){
 
 		car->GetLcd().SetRegion({imageProcess.midpoint[i], i, 1, 1});
 		car->GetLcd().FillColor(St7735r::kRed);
@@ -357,38 +358,48 @@ void RunTestApp::printResult(){
 
 	//print Q and cross road related info
 
-	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,imageProcess.black_end,car->GetCameraW(),1));
+	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,imageProcess.black_end,WIDTH,1));
 	car->GetLcd().FillColor(St7735r::kGreen);
 
-	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,imageProcess.black_line_start,car->GetCameraW(),1));
+	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,imageProcess.black_line_start,WIDTH,1));
 	car->GetLcd().FillColor(St7735r::kGreen);
 
-	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,imageProcess.black_line_end,car->GetCameraW(),1));
+	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,imageProcess.black_line_end,WIDTH,1));
 	car->GetLcd().FillColor(St7735r::kGreen);
 
-	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,imageProcess.white_start,car->GetCameraW(),1));
+	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,imageProcess.white_start,WIDTH,1));
 	car->GetLcd().FillColor(St7735r::kGreen);
 
-	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,imageProcess.white_end,car->GetCameraW(),1));
+	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,imageProcess.white_end,WIDTH,1));
 	car->GetLcd().FillColor(St7735r::kGreen);
+
+	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,imageProcess.blp.nearest_blackGuideLine,WIDTH,1));
+	car->GetLcd().FillColor(St7735r::kYellow);
 
 	//BE,WS, WE for Q & crossroad
 	car->GetLcd().SetRegion({0, 64, St7735r::GetW(), LcdTypewriter::GetFontH()});
 	writer.WriteString(String::Format("%ld, %ld, %ld,%ld\n",imageProcess.black_end, imageProcess.checkRA, imageProcess.white_start, imageProcess.white_end).c_str());
 
 	car->GetLcd().SetRegion({0, 80, St7735r::GetW(), LcdTypewriter::GetFontH()});
-	if(imageProcess.black_line){
-		writer.WriteString(String::Format("BLBLBL: %ld, %ld",imageProcess.black_line_start, imageProcess.black_line_end).c_str());
+	if(imageProcess.blp.approaching()){
+		writer.WriteString(String::Format("Approaching: %ld",imageProcess.blp.nearest_blackGuideLine).c_str());
 	}
 	else
-		writer.WriteString(String::Format("!BL!BL!BL: %ld, %ld",imageProcess.black_line_start, imageProcess.black_line_end).c_str());
+		writer.WriteString(String::Format("!Approaching: %ld",imageProcess.blp.nearest_blackGuideLine).c_str());
+
+//	if(imageProcess.black_line){
+//			writer.WriteString(String::Format("BLBLBL: %ld, %ld",imageProcess.black_line_start, imageProcess.black_line_end).c_str());
+//		}
+//		else
+//			writer.WriteString(String::Format("!BL!BL!BL: %ld, %ld",imageProcess.black_line_start, imageProcess.black_line_end).c_str());
+
 
 	car->GetLcd().SetRegion({0, 96, St7735r::GetW(), LcdTypewriter::GetFontH()});
 	if(imageProcess.bg){
 		writer.WriteString(String::Format("BGBGBG: %ld",imageProcess.blp.narrow_count).c_str());
 	}
 	else
-		writer.WriteString(String::Format("!BG!BG!BG: %ld",imageProcess.blp.nearest_blackGuideLine).c_str());
+		writer.WriteString(String::Format("!BG!BG!BG: %ld",imageProcess.blp.narrow_count).c_str());
 
 	car->GetLcd().SetRegion({0, 112, St7735r::GetW(), LcdTypewriter::GetFontH()});
 	if(imageProcess.crossroad){

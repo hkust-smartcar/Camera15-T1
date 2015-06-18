@@ -141,7 +141,7 @@ void ImageProcess::start(Byte* image){
 			}
 
 			//scan to right
-			for(int r_column= mid; r_column<=RE; r_column++){
+			for(int r_column= mid; r_column<RE; r_column++){
 				if(bitmap[row][r_column]!=r_prev && !r_prev){
 					margin[row][RIGHT]=r_column;
 					break;
@@ -279,7 +279,8 @@ void ImageProcess::start(Byte* image){
 
 	else if(blp.approaching()){
 		for(int i=blp.nearest_blackGuideLine; i>CS; i--){
-			midpoint[i]=blp.midpoint[i];
+			if(blp.margin[i][RIGHT]!=blp.margin[i][LEFT])
+				midpoint[i]=blp.midpoint[i];
 		}
 	}
 

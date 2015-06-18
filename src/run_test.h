@@ -17,6 +17,7 @@
 #include "pid_controller.h"
 #include <libsc/k60/jy_mcu_bt_106.h>
 #include "motor_sd.h"
+#include "definition.h"
 
 using namespace std;
 using namespace libsc::k60;

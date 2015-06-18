@@ -30,11 +30,6 @@ int Imp::GetPixel(const Byte* src, const uint8_t x, const uint8_t y)
 }
 
 
-int Imp::BoolGetPixel(const bool* src, const uint8_t w, const uint8_t h)
-{
-	return (src[h*78+w]);
-
-}
 
 
 void Imp::medianFilter(const Byte* src, bool bitmap[58][78])

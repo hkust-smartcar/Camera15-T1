@@ -15,15 +15,22 @@ int16_t blacklineProcess::Analyze(bool bitmap[58][78]){
 
 	for(int16_t row=CE-1; row>=CS; row--){
 
-		//initiation
-		margin[row][LEFT]=RS;
-		margin[row][RIGHT]=RE-1;
+		//ensure start from white
+		int start = RS;
+		int end = RE-1;
 
-		bool l_prev = bitmap[row][RS];
-		bool r_prev = bitmap[row][RE];
+		while(bitmap[row][start] && start<end){start++;}
+		while(bitmap[row][end] && end>start){end--;}
+
+		//initiation
+		margin[row][LEFT]=start;
+		margin[row][RIGHT]=end;
+
+		bool l_prev = bitmap[row][start];
+		bool r_prev = bitmap[row][end];
 
 		// scan from left
-		for(uint16_t l_column= RS; l_column<RE ; l_column++){
+		for(uint16_t l_column= start; l_column<end ; l_column++){
 			if(bitmap[row][l_column]!=l_prev && !l_prev){
 				margin[row][LEFT]=l_column;
 				break;
@@ -32,7 +39,7 @@ int16_t blacklineProcess::Analyze(bool bitmap[58][78]){
 		}
 
 		//scan from right
-		for(uint16_t r_column= RE-1; r_column>RS; r_column--){
+		for(uint16_t r_column= end; r_column>start; r_column--){
 			if(bitmap[row][r_column]!=r_prev && !r_prev){
 				margin[row][RIGHT]=r_column;
 				break;
@@ -44,12 +51,24 @@ int16_t blacklineProcess::Analyze(bool bitmap[58][78]){
 
 	}
 
-	for(uint16_t j=CE-1; j>CS; j--){
-		if(margin[j][RIGHT]-margin[j][LEFT]<5){
+	// if not white->black->white, filter out data
+	for(uint16_t i=CE-1; i>CS; i--){
+
+		uint16_t check1 = libutil::Clamp(CS,margin[i][LEFT]-5,CE-1);
+		uint16_t check2 = libutil::Clamp(CS,margin[i][RIGHT]+5,CE-1);
+
+		if(margin[i][LEFT]==RS || margin[i][RIGHT]==RE || bitmap[i][check1] || bitmap[i][check2] || margin[i][LEFT] > margin[i][RIGHT] || margin[i][RIGHT] < margin[i][LEFT]){
+			margin[i][RIGHT]=margin[i][LEFT];
+		}
+	}
+
+	for(int j=CE-1; j>CS; j--){
+		if(margin[j][RIGHT]-margin[j][LEFT]<5 && margin[j][RIGHT]-margin[j][LEFT] !=0){
 			nearest_blackGuideLine = j;
 			break;
 		}
 	}
+
 
 	double sum = 0;
 
@@ -71,20 +90,20 @@ bool blacklineProcess::detected(){
 	narrow_count=0;
 
 	//nearest 5 rows
-	for(int16_t row=CE-1; row>CE-7; row--){
-		if(margin[row][RIGHT]-margin[row][LEFT] < 5 && margin[row][RIGHT]-margin[row][LEFT] !=0){ // count narrow row
+	for(int16_t row=CE-1; row>CE-6; row--){
+		if(margin[row][RIGHT]-margin[row][LEFT] < 6 && margin[row][RIGHT]-margin[row][LEFT] !=0){ // count narrow row
 			narrow_count++;
 			near ++;
 		}
 	}
 	//other rows
-	for(int16_t row=CE-7; row>=CS; row--){
+	for(int16_t row=CE-6; row>=CS; row--){
 		if(margin[row][RIGHT]-margin[row][LEFT] < 5 && margin[row][RIGHT]-margin[row][LEFT] !=0){ // count narrow row
 			narrow_count++;
 		}
 	}
 
-	if(narrow_count>15 && near>3){ //45){ // if narrow row count > threshold && right in front of car
+	if(narrow_count>30 && near>3){ //45){ // if narrow row count > threshold && right in front of car
 		return true;
 	}
 
@@ -98,13 +117,13 @@ bool blacklineProcess::approaching(){
 
 	int count = 0;
 
-	for(int16_t row=nearest_blackGuideLine; row>=HEIGHT/2; row--){
+	for(int16_t row=nearest_blackGuideLine; row>CS; row--){
 		if(margin[row][RIGHT]-margin[row][LEFT] < 5 && margin[row][RIGHT]-margin[row][LEFT] !=0){ // count narrow row
 			count++;
 		}
 	}
 
-	if(!detected() && nearest_blackGuideLine>CE-25 && count>10){
+	if(!detected() && nearest_blackGuideLine>CE-25 && count>20){
 		return true;
 	}
 	return false;
