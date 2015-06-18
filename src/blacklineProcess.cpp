@@ -9,20 +9,21 @@
 #include "blacklineProcess.h"
 
 namespace camera{
-int16_t blacklineProcess::Analyze(bool bitmap[60][80]){
+int16_t blacklineProcess::Analyze(bool bitmap[58][78]){
 
-	for(int16_t row=HEIGHT-1; row>=0; row--){
+	nearest_blackGuideLine = 0;
 
+	for(int16_t row=CE-1; row>=CS; row--){
+
+		//initiation
 		margin[row][LEFT]=RS;
-		margin[row][RIGHT]=RE;
-		//if midpoint = black, out of track already
+		margin[row][RIGHT]=RE-1;
 
-		//start from previous midpoint
-		bool l_prev = bitmap[row][RE];
+		bool l_prev = bitmap[row][RS];
 		bool r_prev = bitmap[row][RE];
 
 		// scan from left
-		for(uint16_t l_column= RE/4; l_column<RE ; l_column++){
+		for(uint16_t l_column= RS; l_column<RE ; l_column++){
 			if(bitmap[row][l_column]!=l_prev && !l_prev){
 				margin[row][LEFT]=l_column;
 				break;
@@ -31,7 +32,7 @@ int16_t blacklineProcess::Analyze(bool bitmap[60][80]){
 		}
 
 		//scan from right
-		for(uint16_t r_column= RE; r_column>0; r_column--){
+		for(uint16_t r_column= RE-1; r_column>RS; r_column--){
 			if(bitmap[row][r_column]!=r_prev && !r_prev){
 				margin[row][RIGHT]=r_column;
 				break;
@@ -41,43 +42,73 @@ int16_t blacklineProcess::Analyze(bool bitmap[60][80]){
 
 		midpoint[row] = (margin[row][LEFT]+margin[row][RIGHT])/2;
 
+	}
 
+	for(uint16_t j=CE-1; j>CS; j--){
+		if(margin[j][RIGHT]-margin[j][LEFT]<5){
+			nearest_blackGuideLine = j;
+			break;
+		}
 	}
 
 	double sum = 0;
 
-	for(uint16_t k=35; k<45; k++){
+	for(uint16_t k=MS; k<ME; k++){
 		sum += midpoint[k];
 	}
 
-	return (37-sum/10)*100;
+	return (MIDPOINT_REF-sum/10)*100;
 
 }
 
 bool blacklineProcess::detected(){
 
-	//detected = true when double line -> single line
+	//detected = true when arrive single line zone
 	//evidence 1: number of rows with narrow width > threshold
-	//evidence 2: no sudden change in midpoint of rows: current - prev > threshold
+	//evidence 2: black line start near car
 
-//	uint16_t prev_mid = midpoint[HEIGHT-1];
+	int near = 0;
 	narrow_count=0;
 
-	for(int16_t row=HEIGHT-1; row>=0; row--){
-		if(margin[row][RIGHT]-margin[row][LEFT] < 5){ // count narrow row
+	//nearest 5 rows
+	for(int16_t row=CE-1; row>CE-7; row--){
+		if(margin[row][RIGHT]-margin[row][LEFT] < 5 && margin[row][RIGHT]-margin[row][LEFT] !=0){ // count narrow row
+			narrow_count++;
+			near ++;
+		}
+	}
+	//other rows
+	for(int16_t row=CE-7; row>=CS; row--){
+		if(margin[row][RIGHT]-margin[row][LEFT] < 5 && margin[row][RIGHT]-margin[row][LEFT] !=0){ // count narrow row
 			narrow_count++;
 		}
-//		if(abs(midpoint[row]-prev_mid) > WIDTH/3){ // sudden change
-//			return false;
-//		}
-//		prev_mid = midpoint[row];
 	}
 
-	if(narrow_count>45){ // if narrow row count > threshold
+	if(narrow_count>15 && near>3){ //45){ // if narrow row count > threshold && right in front of car
 		return true;
 	}
 
 	return false;
+}
+
+bool blacklineProcess::approaching(){
+
+	//approaching = true when double line -> single line
+	//evidence: nearest_blackGuideLine < threshold
+
+	int count = 0;
+
+	for(int16_t row=nearest_blackGuideLine; row>=HEIGHT/2; row--){
+		if(margin[row][RIGHT]-margin[row][LEFT] < 5 && margin[row][RIGHT]-margin[row][LEFT] !=0){ // count narrow row
+			count++;
+		}
+	}
+
+	if(!detected() && nearest_blackGuideLine>CE-25 && count>10){
+		return true;
+	}
+	return false;
+
 }
 
 }

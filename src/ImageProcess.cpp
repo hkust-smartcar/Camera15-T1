@@ -9,17 +9,6 @@
 #include "ImageProcess.h"
 #include <algorithm>
 
-#define RS 0	//row start
-#define RE 80	//row end
-#define WHITECOUNT 0
-#define ISWHITE 1
-#define ISBLACK 2
-#define WHITEAT 3
-#define CS 35
-#define CE 45
-#define LEFT 0
-#define RIGHT 1
-
 namespace camera{
 
 ImageProcess::ImageProcess()
@@ -29,13 +18,13 @@ ImageProcess::ImageProcess()
 
 	FACTOR(100),
 
-	black_end(0),
-	checkRA(0),
-	white_start(HEIGHT-1),
-	white_end(HEIGHT-1),
-	black_line_start(0),
-	black_line_end(0),
-	slope(0),
+	black_end(CS),
+	checkRA(CS),
+	white_start(CE-1),
+	white_end(CE-1),
+	black_line_start(CS),
+	black_line_end(CS),
+	slope(CS),
 
 	crossroad(false),
 	l_byebye(false),
@@ -46,7 +35,7 @@ ImageProcess::ImageProcess()
 
 	STATE(0)
 {
-	for(int i=0; i<60; i++){
+	for(int i=CS; i<CE; i++){
 		midpoint[i] = MIDPOINT_REF;
 
 		data[i][0]=0;
@@ -58,7 +47,8 @@ ImageProcess::ImageProcess()
 
 void ImageProcess::start(Byte* image){
 
-	//initiation
+/************************INITIALIZATION***********************/
+
 	//for cross road
 	white_count = 0;
 	crossroad = false;
@@ -74,31 +64,23 @@ void ImageProcess::start(Byte* image){
 
 	//for special settings
 	black_line = false;
+	bg = false;
 
+	//filter and convert to bits
+	medianFilter.medianFilter(image,bitmap);
 
-	//	dis.correction(image,bitmap);
-	//convert to bits
-	for(int16_t image_row=0; image_row<HEIGHT; image_row++){
-		for(int16_t byte=0; byte<10; byte++){
-			Byte check_image = image[image_row*10+byte];
-			/*to bit*/
-			for(int16_t bit=7; bit>=0; bit--){
-				bitmap[image_row][8*byte+bit] = check_image & 0x01;
-				check_image >>= 1;
-			}
-		}
-	}
+/************************START IMAGE PROCESSING***********************/
 
-	// start image processing
-	for(int16_t row=HEIGHT-1; row>=0; row--){
+	for(int16_t row=CE-1; row>=CS; row--){
 
+		//clear old data
 		data[row][WHITECOUNT]= 0;
 		data[row][ISWHITE] = 0;
 		data[row][ISBLACK] = 0;
 		data[row][WHITEAT] = LEFT;
 
 		//collect row data: white pixels in row
-		for(int pixels=0; pixels<WIDTH; pixels++){
+		for(int pixels=RS; pixels<RE; pixels++){
 			if(!bitmap[row][pixels])
 				data[row][WHITECOUNT]++;
 		}
@@ -133,7 +115,7 @@ void ImageProcess::start(Byte* image){
 
 		int16_t mid;
 
-		if(row == HEIGHT-1){
+		if(row == CE-1){
 			mid = midpoint[row];
 		}
 		//prevent sudden change of midpoint
@@ -150,7 +132,7 @@ void ImageProcess::start(Byte* image){
 			bool r_prev = bitmap[row][mid];
 
 			// scan to left
-			for(int l_column= mid; l_column>RS ; l_column--){
+			for(int l_column= mid; l_column>=RS ; l_column--){
 				if(bitmap[row][l_column]!=l_prev && !l_prev){
 					margin[row][LEFT]=l_column;
 					break;
@@ -159,7 +141,7 @@ void ImageProcess::start(Byte* image){
 			}
 
 			//scan to right
-			for(int r_column= mid; r_column<RE; r_column++){
+			for(int r_column= mid; r_column<=RE; r_column++){
 				if(bitmap[row][r_column]!=r_prev && !r_prev){
 					margin[row][RIGHT]=r_column;
 					break;
@@ -188,11 +170,11 @@ void ImageProcess::start(Byte* image){
 		}
 	}
 
-	//check right angle/ cross road
+/************************COLLECT EVIDENCE***********************/
 
 	//find last black row
-	black_end = 0;
-	for(int black = HEIGHT-1; black>=0; black--){
+	black_end = CS;
+	for(int black = CE-1; black>=CS; black--){
 		if(data[black][ISBLACK]==1){
 			black_end = black;
 			break;
@@ -202,7 +184,7 @@ void ImageProcess::start(Byte* image){
 	//scan down from last black
 	//find first white row
 	white_start = black_end;
-	for(int white = white_start; white<HEIGHT; white++){
+	for(int white = white_start; white<CE; white++){
 		if(data[white][ISWHITE]==1){
 			white_start = white;
 			break;
@@ -210,7 +192,7 @@ void ImageProcess::start(Byte* image){
 	}
 	//find last white row
 	white_end = white_start+1;
-	for(int white = white_end; white<HEIGHT-1; white+=2){
+	for(int white = white_end; white<CE-1; white+=2){
 		if(data[white][ISWHITE]==0){
 			white_end = white-1; //last white row
 			break;
@@ -225,12 +207,12 @@ void ImageProcess::start(Byte* image){
 	if(black_end>1)
 		checkRA = black_end-1;
 	else
-		checkRA = 0;
+		checkRA = CS;
 
-	for(int white = checkRA; white>0; white--){
+	for(int white = checkRA; white>CS; white--){
 		int count =0;
 
-		for(int pixels=0; pixels<WIDTH/2; pixels++){
+		for(int pixels=RS; pixels<WIDTH/2; pixels++){
 			if(!bitmap[white][pixels])
 				count++;
 		}
@@ -246,28 +228,28 @@ void ImageProcess::start(Byte* image){
 		}
 	}
 
-	if(black_line && white_start>checkRA&& checkRA-black_end>HEIGHT/2){ // to prevent seeing other track // && checkRA-black_end>HEIGHT/2){
+	if(black_line && white_start>checkRA&& checkRA-black_end>CE/2){ // to prevent seeing other track // && checkRA-black_end>HEIGHT/2){
 		//find last black row of first area
 		black_line_start = checkRA;
 		black_end = checkRA;
-		for(int black = checkRA-1; black>0; black--){
+		for(int black = checkRA-1; black>CS; black--){
 			int count=0;
-			for(int pixels=0; pixels<WIDTH; pixels++){
+			for(int pixels=RS; pixels<RE; pixels++){
 				if(!bitmap[black][pixels])
 					count++;
 			}
-			if(count==WIDTH-5){
+			if(count==RE-5){
 				black_end = black;
 				break;
 			}
 			if(black==0){
-				black_end=0;
+				black_end=CS;
 			}
 		}
 
-		for(int black = black_line_start+1; black<HEIGHT; black++){
+		for(int black = black_line_start+1; black<CE; black++){
 			int count=0;
-			for(int pixels=0; pixels<WIDTH; pixels++){
+			for(int pixels=RS; pixels<RE; pixels++){
 				if(!bitmap[black][pixels])
 					count++;
 			}
@@ -275,8 +257,8 @@ void ImageProcess::start(Byte* image){
 				black_line_end = black-1;
 				break;
 			}
-			if(black==HEIGHT-1)
-				black_line_end = HEIGHT-1;
+			if(black==CE-1)
+				black_line_end = CE-1;
 		}
 
 	}
@@ -288,39 +270,25 @@ void ImageProcess::start(Byte* image){
 	else
 		white_count = 0;
 
-	//for black guide line
-	//find range of "almost" white row
-//	almost_white_number = 0;
-//	int check_nearly_white_margin = 0;
-//	for(int white = HEIGHT/2; white>0; white--){
-//		uint16_t wc = 0;
-//		for(int c=0; c<RE; c++){
-//			if(!bitmap[white][c])
-//				wc++;
-//		}
-//		if(wc>WIDTH-20 && data[white][ISWHITE] == 0){
-//			almost_white_number++;
-//		}
-//	}
-//	for(int white = HEIGHT/2; white<HEIGHT; white++){
-//		if(margin[white][0]-MIDPOINT_REF<5 || margin[white][1]-MIDPOINT_REF<5){
-//			check_nearly_white_margin++;
-//		}
-//	}
-//	for(int white = HEIGHT-1; white>HEIGHT/2; white--){
-//			if(data[white][WHITECOUNT]<WIDTH/2){
-//				almost_white_number++;
-//			}
-//		}
+/************************DEFINE CASES***********************/
 
+	//black guide line
 	if(blp.detected()){
 		bg = true;
 	}
-	else if(black_end>HEIGHT/4 &&!black_line){ //right angle?
 
-		float h1 = HEIGHT-1;
+	else if(blp.approaching()){
+		for(int i=blp.nearest_blackGuideLine; i>CS; i--){
+			midpoint[i]=blp.midpoint[i];
+		}
+	}
+
+	//right angle: slope
+	else if(black_end>CE/4 &&!black_line){
+
+		float h1 = CE-1;
 		float h2 = black_end+2;
-		float mid1 = midpoint[HEIGHT-1];
+		float mid1 = midpoint[CE-1];
 		float mid2 = midpoint[black_end+2];
 
 		slope = (h1-h2)/(mid1-mid2);
@@ -330,19 +298,20 @@ void ImageProcess::start(Byte* image){
 		}
 
 	}
-	//ensure there are few rows of white
-	else if(black_end<HEIGHT/6 && white_count >5){
+
+	//cross road: ensure there are few rows of white
+	else if(black_end<CE/6 && white_count >5){
 		crossroad = true;
 	}
-	//black guide line?
-//	else if(black_end<HEIGHT/4 && almost_white_number > 5 && check_nearly_white_margin>HEIGHT/3){
-	//going out if going_out > threshold
-	else if (l_going_out-black_end>HEIGHT*2/3){
+
+	//going out: going_out > threshold
+	else if (l_going_out-black_end>CE*2/3){
 		l_byebye = true;
 	}
-	else if(r_going_out-black_end>HEIGHT*2/3){
+	else if(r_going_out-black_end>CE*2/3){
 		r_byebye = true;
 	}
+
 	//to be safe
 	else
 	{
@@ -352,6 +321,7 @@ void ImageProcess::start(Byte* image){
 	}
 
 }
+
 
 //calculate sum of midpoint in [start, end]
 double ImageProcess::MidpointSumCal(uint16_t start, uint16_t end){
@@ -364,10 +334,11 @@ double ImageProcess::MidpointSumCal(uint16_t start, uint16_t end){
 	return sum;
 }
 
+
 //decide what result to return
 int ImageProcess::Analyze(void){
 
-	double error = MIDPOINT_REF - MidpointSumCal(CS,CE)/10;
+	double error = MIDPOINT_REF - MidpointSumCal(MS,ME)/10;
 
 	if(bg){
 		return blp.Analyze(bitmap);

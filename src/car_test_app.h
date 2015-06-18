@@ -9,6 +9,7 @@
 #pragma once
 
 #include "app.h"
+#include "Imp.h"
 
 namespace camera
 {
@@ -21,6 +22,9 @@ public:
 	{}
 
 	void Run() override;
+
+	Imp mf;
+
 };
 
 }

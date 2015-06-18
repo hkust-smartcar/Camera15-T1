@@ -10,22 +10,12 @@
 #include <algorithm>
 #include "libsc/k60/jy_mcu_bt_106.h"
 #include "blacklineProcess.h"
+#include "Imp.h"
 
-#include "distortion.h"
+#include "definition.h"
+
+//#include "distortion.h"
 #pragma once
-
-
-#define HEIGHT 60
-#define WIDTH 80
-
-#define INIT_STATE 	 0
-#define STRAIGHT 	 1
-#define CROSSROAD 	 2
-#define RIGHT_ANGLE  3
-#define Q_TURN 		 4
-#define TURNING 	 5
-#define OUT_OF_BOUND 6
-#define MIDPOINT_REF 37
 
 using namespace libsc::k60;
 using namespace libsc;
@@ -45,7 +35,7 @@ public:
 	~ImageProcess()
 	{}
 
-	bool bitmap[60][80];
+	bool bitmap[58][78];
 	uint16_t margin[60][2];
 	uint16_t midpoint[60];
 
@@ -67,7 +57,6 @@ public:
 
 	int16_t data[60][4]; //[0]: number of white pixels; [1]: white row; [2]: black row; [3]: more white at left(0)/right(1)
 
-
 	//indicate situation
 	bool crossroad;
 	bool l_byebye;
@@ -84,7 +73,10 @@ public:
 	int STATE;
 
 	//distortion
-	distortion dis;
+//	distortion dis;
+
+	//median filter
+	Imp medianFilter;
 
 
 };

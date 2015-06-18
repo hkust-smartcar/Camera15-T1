@@ -82,10 +82,12 @@ void CarTestApp::Run()
 		{
 			memcpy(image2.get(), car->GetCamera().LockBuffer(), image_size);
 			car->GetCamera().UnlockBuffer();
-
+//
 			car->GetLcd().SetRegion({0, 0, car->GetCameraW(), car->GetCameraH()});
 			car->GetLcd().FillBits(0, 0xFFFF, image2.get(),
 					car->GetCameraW() * car->GetCameraH());
+
+			mf.medianFilterPrint(image2.get(), &car->GetLcd());
 
 //			car->SetMotorPower(0,200);
 //			car->SetMotorPower(1,200);

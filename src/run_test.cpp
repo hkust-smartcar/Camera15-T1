@@ -30,7 +30,6 @@
 
 
 #include "libbase/k60/pit.h"
-
 #include "libbase/k60/clock_utils.h"
 
 using namespace libsc;
@@ -124,7 +123,7 @@ void RunTestApp::DetectEmergencyStop(){
 
 	const int count = car->GetEncoderCount(0);
 	const int count2 = car->GetEncoderCount(1);
-	if (!is_startup && (abs(count) + abs(count2) < 100))
+	if (!is_startup && (abs(count) + abs(count2) < 65))
 	{
 		if (m_emergency_stop_state.is_triggered)
 		{
@@ -184,7 +183,7 @@ void RunTestApp::Run()
 						r_result = (int32_t)r_speedControl.updatePID((float)car->GetEncoderCount(1));
 						car->SetMotorPower(1,r_result);
 
-//						DetectEmergencyStop();
+						DetectEmergencyStop();
 					}
 					else {
 						car->SetMotorPower(0,0);
@@ -217,7 +216,7 @@ void RunTestApp::Run()
 		//start image processing
 		imageProcess.start(image2.get());
 		imageProcess.blp.Analyze(imageProcess.bitmap);
-//		printResult();
+		printResult();
 
 		//set angle with servo PID controller and image process result
 		//negative for correcting direction
@@ -389,7 +388,7 @@ void RunTestApp::printResult(){
 		writer.WriteString(String::Format("BGBGBG: %ld",imageProcess.blp.narrow_count).c_str());
 	}
 	else
-		writer.WriteString(String::Format("!BG!BG!BG: %ld",imageProcess.blp.narrow_count).c_str());
+		writer.WriteString(String::Format("!BG!BG!BG: %ld",imageProcess.blp.nearest_blackGuideLine).c_str());
 
 	car->GetLcd().SetRegion({0, 112, St7735r::GetW(), LcdTypewriter::GetFontH()});
 	if(imageProcess.crossroad){

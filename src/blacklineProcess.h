@@ -9,21 +9,13 @@
 #include <libsc/system.h>
 #include <algorithm>
 
+#include "definition.h"
+
 #pragma once
 
 using namespace libsc::k60;
 using namespace libsc;
 using namespace std;
-
-#define RS 0	//row start
-#define RE 79	//row end
-
-#define HEIGHT 60
-#define WIDTH 80
-
-
-#define LEFT 0
-#define RIGHT 1
 
 namespace camera
 {
@@ -34,12 +26,14 @@ public:
 	{}
 	~blacklineProcess(){}
 
-	int16_t Analyze(bool binary[60][80]);
+	int16_t Analyze(bool binary[58][78]);
 	bool detected();
+	bool approaching();
 
 	uint16_t midpoint[60];
 	uint16_t margin[60][2];
 	uint16_t narrow_count=0;
+	uint16_t nearest_blackGuideLine = 0;
 
 };
 }

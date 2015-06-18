@@ -146,12 +146,14 @@ public:
 
 	static constexpr int GetCameraW()
 	{
-		return 80;
+//		return 80;
+		return 78;
 	}
 
 	static constexpr int GetCameraH()
 	{
-		return 60;
+//		return 60;
+		return 58;
 	}
 
 private:

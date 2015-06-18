@@ -26,9 +26,9 @@ public:
 
 	virtual ~Imp();
 
-	void medianFilterPrint(const Byte* src, St7735r *lcd);
+	void medianFilterPrint(const Byte* src, libsc::St7735r *lcd);
 
-	void medianFilter (const Byte* src);
+	void medianFilter (const Byte* src, bool bitmap[58][78]);
 
 
 private:
@@ -41,7 +41,6 @@ private:
 	int BoolGetPixel(const bool* src, const uint8_t x,const uint8_t y);
 
 	bool mf[4524]; //58*78
-
 
 
 
