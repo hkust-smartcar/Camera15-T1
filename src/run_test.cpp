@@ -95,8 +95,8 @@ RunTestApp::RunTestApp(SystemRes *res)
 	m_instance = this;
 
 //for grapher use
-	m_peter.addWatchedVar(&sd_setpoint);
-	m_peter.addWatchedVar(&show_error);
+	m_peter.addWatchedVar(&sd_setpoint, "sd_setpoint");
+	m_peter.addWatchedVar(&show_error, "error");
 
 // servo
 	m_peter.addSharedVar(&s_kp,"skp");

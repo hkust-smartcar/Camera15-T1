@@ -36,7 +36,7 @@ public:
 
 private:
 
-	bool t = true;
+	bool t = false;
 	float speed = 0;
 
 	//kp, ki, kd and setpoint for servo
