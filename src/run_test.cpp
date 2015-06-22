@@ -64,10 +64,11 @@ RunTestApp::RunTestApp(SystemRes *res)
   l_m_setpoint(2000.0f), //2900
   r_m_setpoint(2000.0f),
 
-  sd_setpoint(2000),
-
+  sd_setpoint(1700),
 
   show_error(0.0),
+
+  RA_time(System::Time()),
 
   servo_Control(&s_setpoint, &s_kp, &s_ki, &s_kd, -1000, 1000),
   l_speedControl(&l_m_setpoint, &l_kp, &l_ki, &l_kd, 0, 950),
@@ -123,7 +124,7 @@ void RunTestApp::DetectEmergencyStop(){
 
 	const int count = car->GetEncoderCount(0);
 	const int count2 = car->GetEncoderCount(1);
-	if (!is_startup && (abs(count) + abs(count2) < 65))
+	if (!is_startup && (abs(count) + abs(count2) < 60))
 	{
 		if (m_emergency_stop_state.is_triggered)
 		{
@@ -213,35 +214,36 @@ void RunTestApp::Run()
 			car->GetCamera().UnlockBuffer();
 		}
 
-		//start image processing
-		imageProcess.start(image2.get());
-		imageProcess.blp.Analyze(imageProcess.bitmap);
-//		printResult();
+			//start image processing
+			imageProcess.start(image2.get());
+			imageProcess.blp.Analyze(imageProcess.bitmap);
+//					printResult();
 
-		//set angle with servo PID controller and image process result
-		//negative for correcting direction
-		//
-		float error = (float)imageProcess.Analyze();
-//		if(imageProcess.STATE != 5){
-//			updateSPD(error);
-//		}
-//		else{
-//			s_kp = SKP;
-//			s_kd = SKD;
-//
-//		}
+			//set angle with servo PID controller and image process result
+			//negative for correcting direction
+			//
+			float error = imageProcess.Analyze();
+			//		if(imageProcess.STATE != 5){
+			//			updateSPD(error);
+			//		}
+			//		else{
+			//			s_kp = SKP;
+			//			s_kd = SKD;
+			//
+			//		}
 
-		show_error = error;//abs((int)(error/1000));
-		s_result = (int16_t)servo_Control.updatePID_ori(-error);
-		car->SetTurning(s_result);
-		if(abs(s_result)<10000){
-		l_m_setpoint =  (float)software_differential.turn_left_encoder(sd_setpoint,car->GetServo().GetDegree(),9500,3700);
-		r_m_setpoint = (float) software_differential.turn_right_encoder(sd_setpoint,car->GetServo().GetDegree(),9500,3700);
-		}
-		else{
-			l_m_setpoint =  sd_setpoint;
-			r_m_setpoint = sd_setpoint;
-		}
+			show_error = error;//abs((int)(error/1000));
+			s_result = (int16_t)servo_Control.updatePID_ori(-error);
+			car->SetTurning(s_result);
+//			if(abs(s_result)<10000){
+				l_m_setpoint =  (float)software_differential.turn_left_encoder(sd_setpoint,car->GetServo().GetDegree(),9500,4300);
+				r_m_setpoint = (float) software_differential.turn_right_encoder(sd_setpoint,car->GetServo().GetDegree(),9500,4300);
+//			}
+//			else{
+//				l_m_setpoint =  sd_setpoint;
+//				r_m_setpoint = sd_setpoint;
+//			}
+
 	};
 	looper.Repeat(11, servo, Looper::RepeatMode::kPrecise);
 
@@ -419,8 +421,8 @@ void RunTestApp::printResult(){
 
 	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,144, St7735r::GetW(),LcdTypewriter::GetFontH()));
 //	writer.WriteString(String::Format("%ld, %ld\n",imageProcess.black_line_start, imageProcess.black_line_end).c_str());
-//	writer.WriteString(String::Format("%f",imageProcess.slope).c_str());
-	writer.WriteString(String::Format("%ld",imageProcess.Analyze()).c_str());
+	writer.WriteString(String::Format("%f",imageProcess.slope).c_str());
+//	writer.WriteString(String::Format("%ld",imageProcess.Analyze()).c_str());
 
 	//
 }

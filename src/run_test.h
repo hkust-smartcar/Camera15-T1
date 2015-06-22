@@ -36,7 +36,7 @@ public:
 
 private:
 
-	bool t = false;
+	bool t = true;
 	float speed = 0;
 
 	//kp, ki, kd and setpoint for servo
@@ -59,7 +59,7 @@ private:
 	float r_m_setpoint;
 
 	// for software differential
-	int16_t sd_setpoint;
+	uint16_t sd_setpoint;
 
 	//servo_pid
 	int16_t s_degree;
@@ -72,6 +72,8 @@ private:
 	int32_t r_result;
 	int16_t sp_storage[2];
 
+	//hold right angle
+	Timer::TimerInt RA_time;
 
 	//pid controller for servo & motor
 	PIDhandler servo_Control;

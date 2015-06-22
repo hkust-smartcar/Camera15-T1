@@ -294,7 +294,7 @@ void ImageProcess::start(Byte* image){
 
 		slope = (h1-h2)/(mid1-mid2);
 
-		if(abs(slope)>3 && abs(slope)<5){
+		if(abs(slope)>3 ){ //&& abs(slope)<5){
 			right_angle=true;
 		}
 
@@ -325,8 +325,8 @@ void ImageProcess::start(Byte* image){
 
 
 //calculate sum of midpoint in [start, end]
-double ImageProcess::MidpointSumCal(uint16_t start, uint16_t end){
-	double sum = 0;
+float ImageProcess::MidpointSumCal(uint16_t start, uint16_t end){
+	float sum = 0;
 
 	for(uint16_t k=start; k<end; k++){
 		sum += midpoint[k];
@@ -337,9 +337,9 @@ double ImageProcess::MidpointSumCal(uint16_t start, uint16_t end){
 
 
 //decide what result to return
-int ImageProcess::Analyze(void){
+float ImageProcess::Analyze(void){
 
-	double error = MIDPOINT_REF - MidpointSumCal(MS,ME)/10;
+	float error = MIDPOINT_REF - MidpointSumCal(MS,ME)/10;
 
 	if(bg){
 		return blp.Analyze(bitmap);

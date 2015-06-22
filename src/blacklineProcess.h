@@ -26,7 +26,7 @@ public:
 	{}
 	~blacklineProcess(){}
 
-	int16_t Analyze(bool binary[58][78]);
+	float Analyze(bool binary[58][78]);
 	bool detected();
 	bool approaching();
 

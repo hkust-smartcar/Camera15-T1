@@ -30,32 +30,32 @@ public:
 	ImageProcess();
 	void start(Byte* image);
 
-	int Analyze(void);
-	double MidpointSumCal(uint16_t start, uint16_t end);
+	float Analyze(void);
+	float MidpointSumCal(uint16_t start, uint16_t end);
 	~ImageProcess()
 	{}
 
 	bool bitmap[58][78];
-	uint16_t margin[60][2];
-	uint16_t midpoint[60];
+	uint8_t margin[60][2];
+	uint8_t midpoint[60];
 
-	int16_t black_count;
-	int16_t white_count;
+	uint8_t black_count;
+	uint8_t white_count;
 	//for amplifying error
-	uint16_t FACTOR;
+	uint8_t FACTOR;
 
 	//black line & cross road
 
-	uint16_t black_end;
-	uint16_t checkRA;
-	uint16_t white_start;
-	uint16_t white_end;
-	uint16_t black_line_start;
-	uint16_t black_line_end;
+	uint8_t black_end;
+	uint8_t checkRA;
+	uint8_t white_start;
+	uint8_t white_end;
+	uint8_t black_line_start;
+	uint8_t black_line_end;
 
 	float slope;
 
-	int16_t data[60][4]; //[0]: number of white pixels; [1]: white row; [2]: black row; [3]: more white at left(0)/right(1)
+	uint16_t data[60][4]; //[0]: number of white pixels; [1]: white row; [2]: black row; [3]: more white at left(0)/right(1)
 
 	//indicate situation
 	bool crossroad;
@@ -70,7 +70,7 @@ public:
 	uint16_t almost_white_number;
 
 	//State
-	int STATE;
+	uint8_t STATE;
 
 	//distortion
 //	distortion dis;

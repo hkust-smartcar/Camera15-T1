@@ -9,7 +9,7 @@
 #include "blacklineProcess.h"
 
 namespace camera{
-int16_t blacklineProcess::Analyze(bool bitmap[58][78]){
+float blacklineProcess::Analyze(bool bitmap[58][78]){
 
 	nearest_blackGuideLine = 0;
 
@@ -70,7 +70,7 @@ int16_t blacklineProcess::Analyze(bool bitmap[58][78]){
 	}
 
 
-	double sum = 0;
+	float sum = 0;
 
 	for(uint16_t k=MS; k<ME; k++){
 		sum += midpoint[k];
