@@ -11,7 +11,6 @@
 #include <memory>
 #include <cmath>
 
-#include <libsc/lcd_typewriter.h>
 #include <libsc/k60/led.h>
 #include <libsc/k60/ov7725.h>
 #include <libsc/st7735r.h>
@@ -19,7 +18,6 @@
 #include <libsc/timer.h>
 #include <libutil/looper.h>
 #include <libutil/misc.h>
-#include <libutil/string.h>
 #include "libutil/misc.h"
 #include "libsc/joystick.h"
 
@@ -61,10 +59,10 @@ RunTestApp::RunTestApp(SystemRes *res)
   r_kd(0.0004f),
 
   //19 ms
-  l_m_setpoint(2000.0f), //2900
-  r_m_setpoint(2000.0f),
+  l_m_setpoint(2200.0f), //2900
+  r_m_setpoint(2200.0f),
 
-  sd_setpoint(1700),
+  sd_setpoint(2200),
 
   show_error(0.0),
 
@@ -75,6 +73,8 @@ RunTestApp::RunTestApp(SystemRes *res)
   r_speedControl(&r_m_setpoint, &r_kp, &r_ki, &r_kd, 0, 950),
 
   m_peter(),
+
+  imageProcess(GetSystemRes()->car),
 
   m_start(0),
   m_is_stop(false)
@@ -216,33 +216,20 @@ void RunTestApp::Run()
 
 			//start image processing
 			imageProcess.start(image2.get());
-			imageProcess.blp.Analyze(imageProcess.bitmap);
-//					printResult();
+
+			float error = imageProcess.Analyze();
+			imageProcess.printResult();
+
+			show_error = error;
 
 			//set angle with servo PID controller and image process result
 			//negative for correcting direction
-			//
-			float error = imageProcess.Analyze();
-			//		if(imageProcess.STATE != 5){
-			//			updateSPD(error);
-			//		}
-			//		else{
-			//			s_kp = SKP;
-			//			s_kd = SKD;
-			//
-			//		}
-
-			show_error = error;//abs((int)(error/1000));
 			s_result = (int16_t)servo_Control.updatePID_ori(-error);
 			car->SetTurning(s_result);
-//			if(abs(s_result)<10000){
-				l_m_setpoint =  (float)software_differential.turn_left_encoder(sd_setpoint,car->GetServo().GetDegree(),9500,4300);
-				r_m_setpoint = (float) software_differential.turn_right_encoder(sd_setpoint,car->GetServo().GetDegree(),9500,4300);
-//			}
-//			else{
-//				l_m_setpoint =  sd_setpoint;
-//				r_m_setpoint = sd_setpoint;
-//			}
+
+			//software differential
+			l_m_setpoint =  (float)software_differential.turn_left_encoder(sd_setpoint,car->GetServo().GetDegree(),9500,3700);
+			r_m_setpoint = (float) software_differential.turn_right_encoder(sd_setpoint,car->GetServo().GetDegree(),9500,3700);
 
 	};
 	looper.Repeat(11, servo, Looper::RepeatMode::kPrecise);
@@ -257,174 +244,6 @@ void RunTestApp::Run()
 	}
 	car->GetCamera().Stop();
 
-}
-
-
-
-void RunTestApp::printResult(){
-	Car *car = GetSystemRes()->car;
-
-	//Initiate LCD writer for printing real time information
-	LcdTypewriter::Config writer_conf;
-	writer_conf.lcd = &car->GetLcd();
-	writer_conf.bg_color = libutil::GetRgb565(0x33, 0xB5, 0xE5);
-	LcdTypewriter writer(writer_conf);
-
-	//print filtered image
-	for(uint16_t i=CS; i<CE; i++)
-	{
-		bool* ptr = imageProcess.bitmap[i];
-		car->GetLcd().SetRegion(libsc::Lcd::Rect(0,i,WIDTH,1));
-		car->GetLcd().FillBits(0,0xFFFF,ptr,WIDTH);
-	}
-
-	//
-	// print margin found
-//	for(uint16_t i=CS; i<CE; i++)
-//	{
-//		car->GetLcd().SetRegion({imageProcess.margin[i][0], i, 1, 1});
-//		car->GetLcd().FillColor(St7735r::kBlue);
-//		car->GetLcd().SetRegion({imageProcess.margin[i][1], i, 1, 1});
-//		car->GetLcd().FillColor(St7735r::kBlue);
-//	}
-	//
-	//
-
-	// print margin found
-	for(uint16_t i=CS; i<CE; i++){
-
-		car->GetLcd().SetRegion({imageProcess.blp.margin[i][0], i, 1, 1});
-		car->GetLcd().FillColor(St7735r::kYellow);
-		car->GetLcd().SetRegion({imageProcess.blp.margin[i][1], i, 1, 1});
-		car->GetLcd().FillColor(St7735r::kYellow);
-	}
-
-//	car->GetLcd().SetRegion({0, 64, St7735r::GetW(), LcdTypewriter::GetFontH()});
-//	writer.WriteString(String::Format("%ld,%ld",imageProcess.blp.margin[50][0],imageProcess.blp.margin[50][1]).c_str());
-////	writer.WriteString(String::Format("%ld, %ld\n",imageProcess.blp.margin[10][0], imageProcess.blp.margin[10][1]).c_str());
-////
-////	car->GetLcd().SetRegion({0, 80, St7735r::GetW(), LcdTypewriter::GetFontH()});
-////	writer.WriteString(String::Format("%ld, %ld\n",imageProcess.blp.margin[20][0], imageProcess.blp.margin[20][1]).c_str());
-////
-////	car->GetLcd().SetRegion({0, 96, St7735r::GetW(), LcdTypewriter::GetFontH()});
-////	writer.WriteString(String::Format("%ld, %ld\n",imageProcess.blp.margin[30][0], imageProcess.blp.margin[30][1]).c_str());
-////
-////	car->GetLcd().SetRegion({0, 112, St7735r::GetW(), LcdTypewriter::GetFontH()});
-////	writer.WriteString(String::Format("%ld, %ld\n",imageProcess.blp.margin[40][0], imageProcess.blp.margin[40][1]).c_str());
-////	//
-//
-//	//
-//
- 	 //print midpoint
-	for(uint16_t i=CS; i<CE; i++){
-			car->GetLcd().SetRegion({MIDPOINT_REF, i, 1, 1});
-			car->GetLcd().FillColor(St7735r::kCyan);
-	}
-
-	for(uint16_t i=CS; i<CE; i++){
-
-		car->GetLcd().SetRegion({imageProcess.midpoint[i], i, 1, 1});
-		car->GetLcd().FillColor(St7735r::kRed);
-	}
-//	if (imageProcess.crossroad)
-//		{
-//
-//		for(uint16_t i=libutil::Clamp(0,(int)(imageProcess.white_start-1),60); i<libutil::Clamp(0,(int)imageProcess.white_start-11,60); i++){
-//			car->GetLcd().SetRegion({imageProcess.midpoint[i], i, 1, 1});
-//			car->GetLcd().FillColor(St7735r::kRed);
-//		}
-//
-//		}
-//	else if(imageProcess.black_line){
-//		if(imageProcess.white_end-imageProcess.white_start>10){
-//			for(uint16_t i=libutil::Clamp(0,(int)(imageProcess.black_line_end+1),60); i<libutil::Clamp(0,(int)imageProcess.black_line_end+11,60); i++){
-//				car->GetLcd().SetRegion({imageProcess.midpoint[i], i, 1, 1});
-//				car->GetLcd().FillColor(St7735r::kRed);
-//			}
-//		}
-//		else{
-//			for(uint16_t i=35; i<45; i++){
-//				car->GetLcd().SetRegion({imageProcess.midpoint[i], i, 1, 1});
-//				car->GetLcd().FillColor(St7735r::kRed);
-//			}
-//		}
-//
-//	}
-//	else
-//	{
-//		for(uint16_t i=35; i<45; i++){
-//			car->GetLcd().SetRegion({imageProcess.midpoint[i], i, 1, 1});
-//			car->GetLcd().FillColor(St7735r::kRed);
-//		}
-//	}
-
-	//print Q and cross road related info
-
-	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,imageProcess.black_end,WIDTH,1));
-	car->GetLcd().FillColor(St7735r::kGreen);
-
-	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,imageProcess.black_line_start,WIDTH,1));
-	car->GetLcd().FillColor(St7735r::kGreen);
-
-	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,imageProcess.black_line_end,WIDTH,1));
-	car->GetLcd().FillColor(St7735r::kGreen);
-
-	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,imageProcess.white_start,WIDTH,1));
-	car->GetLcd().FillColor(St7735r::kGreen);
-
-	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,imageProcess.white_end,WIDTH,1));
-	car->GetLcd().FillColor(St7735r::kGreen);
-
-	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,imageProcess.blp.nearest_blackGuideLine,WIDTH,1));
-	car->GetLcd().FillColor(St7735r::kYellow);
-
-	//BE,WS, WE for Q & crossroad
-	car->GetLcd().SetRegion({0, 64, St7735r::GetW(), LcdTypewriter::GetFontH()});
-	writer.WriteString(String::Format("%ld, %ld, %ld,%ld\n",imageProcess.black_end, imageProcess.checkRA, imageProcess.white_start, imageProcess.white_end).c_str());
-
-	car->GetLcd().SetRegion({0, 80, St7735r::GetW(), LcdTypewriter::GetFontH()});
-	if(imageProcess.blp.approaching()){
-		writer.WriteString(String::Format("Approaching: %ld",imageProcess.blp.nearest_blackGuideLine).c_str());
-	}
-	else
-		writer.WriteString(String::Format("!Approaching: %ld",imageProcess.blp.nearest_blackGuideLine).c_str());
-
-//	if(imageProcess.black_line){
-//			writer.WriteString(String::Format("BLBLBL: %ld, %ld",imageProcess.black_line_start, imageProcess.black_line_end).c_str());
-//		}
-//		else
-//			writer.WriteString(String::Format("!BL!BL!BL: %ld, %ld",imageProcess.black_line_start, imageProcess.black_line_end).c_str());
-
-
-	car->GetLcd().SetRegion({0, 96, St7735r::GetW(), LcdTypewriter::GetFontH()});
-	if(imageProcess.bg){
-		writer.WriteString(String::Format("BGBGBG: %ld",imageProcess.blp.narrow_count).c_str());
-	}
-	else
-		writer.WriteString(String::Format("!BG!BG!BG: %ld",imageProcess.blp.narrow_count).c_str());
-
-	car->GetLcd().SetRegion({0, 112, St7735r::GetW(), LcdTypewriter::GetFontH()});
-	if(imageProcess.crossroad){
-		writer.WriteString("XXX");
-	}
-	else{
-		writer.WriteString("!X!X!X");
-	}
-
-	car->GetLcd().SetRegion({0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()});
-	if(imageProcess.right_angle){
-		writer.WriteString("RRR");
-	}
-	else{
-		writer.WriteString("!R!R!R");
-	}
-
-	car->GetLcd().SetRegion(libsc::Lcd::Rect(0,144, St7735r::GetW(),LcdTypewriter::GetFontH()));
-//	writer.WriteString(String::Format("%ld, %ld\n",imageProcess.black_line_start, imageProcess.black_line_end).c_str());
-	writer.WriteString(String::Format("%f",imageProcess.slope).c_str());
-//	writer.WriteString(String::Format("%ld",imageProcess.Analyze()).c_str());
-
-	//
 }
 
 RunTestApp &getInstance(void)
@@ -455,14 +274,6 @@ void RunTestApp::PeggyListener(const std::vector<Byte> &bytes)
 		}
 		break;
 
-	case 's':
-		m_instance->s_setpoint += 1.0f;
-		break;
-
-	case 'S':
-		m_instance->s_setpoint -= 1.0f;
-		break;
-
 	//faster!
 	case 'r':
 		m_instance->l_m_setpoint += 100.0f;
@@ -475,24 +286,6 @@ void RunTestApp::PeggyListener(const std::vector<Byte> &bytes)
 		m_instance->l_m_setpoint -= 100.0f;
 		m_instance->r_m_setpoint -= 100.0f;
 		m_instance->sd_setpoint -= 100.0f;
-		break;
-
-	// move backward
-	case 'y':
-		m_instance->sp_storage[0] = m_instance->l_m_setpoint;
-		m_instance->sp_storage[1] = m_instance->r_m_setpoint;
-		m_instance->l_m_setpoint = -3000.0f;
-		m_instance->r_m_setpoint = -3000.0f;
-
-		m_instance->t = true;
-		break;
-
-	//restore to original sp, stop moving backward
-	case 'Y':
-		m_instance->l_m_setpoint = m_instance->sp_storage[0];
-		m_instance->r_m_setpoint = m_instance->sp_storage[1];
-
-		m_instance->t = false;
 		break;
 	}
 }

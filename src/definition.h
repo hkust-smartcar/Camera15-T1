@@ -11,9 +11,9 @@
 #define STRAIGHT 	 1
 #define CROSSROAD 	 2
 #define RIGHT_ANGLE  3
-#define Q_TURN 		 4
-#define TURNING 	 5
-#define OUT_OF_BOUND 6
+#define TURNING 	 4
+#define OUT_OF_BOUND 5
+
 #define MIDPOINT_REF 37
 
 //data info
@@ -29,3 +29,6 @@
 //for array use
 #define LEFT 0
 #define RIGHT 1
+
+#define START 0
+#define END 1

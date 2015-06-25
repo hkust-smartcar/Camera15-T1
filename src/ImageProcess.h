@@ -11,6 +11,7 @@
 #include "libsc/k60/jy_mcu_bt_106.h"
 #include "blacklineProcess.h"
 #include "Imp.h"
+#include "car.h"
 
 #include "definition.h"
 
@@ -26,18 +27,26 @@ using namespace libutil;
 namespace camera
 {
 class ImageProcess{
+
 public:
-	ImageProcess();
+
+	ImageProcess(Car* car_ptr);
 	void start(Byte* image);
 
 	float Analyze(void);
 	float MidpointSumCal(uint16_t start, uint16_t end);
 	~ImageProcess()
 	{}
+	void printResult();
+	int getState(){return STATE;}
+
+private:
+
+	Car* car;
 
 	bool bitmap[58][78];
-	uint8_t margin[60][2];
-	uint8_t midpoint[60];
+	uint8_t margin[58][2];
+	uint8_t midpoint[58];
 
 	uint8_t black_count;
 	uint8_t white_count;
@@ -55,7 +64,7 @@ public:
 
 	float slope;
 
-	uint16_t data[60][4]; //[0]: number of white pixels; [1]: white row; [2]: black row; [3]: more white at left(0)/right(1)
+	uint16_t data[58][4]; //[0]: number of white pixels; [1]: white row; [2]: black row; [3]: more white at left(0)/right(1)
 
 	//indicate situation
 	bool crossroad;
@@ -64,6 +73,9 @@ public:
 	bool right_angle;
 	bool black_line;
 	bool bg;
+	bool continue_right_angle;
+	bool bias_crossroad;
+	bool continue_bias_crossroad;
 
 	//black guide line
 	blacklineProcess blp;
@@ -71,9 +83,10 @@ public:
 
 	//State
 	uint8_t STATE;
+	float prev_error;
 
 	//distortion
-//	distortion dis;
+	//	distortion dis;
 
 	//median filter
 	Imp medianFilter;

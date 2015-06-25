@@ -96,7 +96,6 @@ private:
 	EmergencyStopState m_emergency_stop_state;
 
 	static void PeggyListener(const std::vector<Byte> &bytes);
-	void printResult();
 //	void updateSPD(float error);
 	void peggy(libbase::k60::Pit* pit);
 	void DetectEmergencyStop();

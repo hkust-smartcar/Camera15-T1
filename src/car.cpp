@@ -29,7 +29,7 @@ using namespace libutil;
 
 #define SERVO_ERR 1350
 #define SERVO_MID_DEGREE 9500 //9500
-#define SERVO_AMPLITUDE 4300 //3700
+#define SERVO_AMPLITUDE 3700 //3700
 
 namespace camera
 {
@@ -148,6 +148,9 @@ Car::Car()
 //		  m_uart(GetUartConfig())
 {
 	m_servo.SetDegree(SERVO_MID_DEGREE);
+	m_leds[1].Switch();
+	m_leds[2].Switch();
+	m_leds[3].Switch();
 }
 
 Car::~Car()
