@@ -10,6 +10,7 @@
 #include <algorithm>
 #include "libsc/k60/jy_mcu_bt_106.h"
 #include "blacklineProcess.h"
+#include "VerticalImageProcess.h"
 #include "Imp.h"
 #include "car.h"
 
@@ -47,6 +48,7 @@ private:
 	bool bitmap[58][78];
 	uint8_t margin[58][2];
 	uint8_t midpoint[58];
+	uint8_t bias_crossroad_margin[58][4];
 
 	uint8_t black_count;
 	uint8_t white_count;
@@ -61,7 +63,13 @@ private:
 	uint8_t white_end;
 	uint8_t black_line_start;
 	uint8_t black_line_end;
+	uint8_t double_check_black_end;
 
+	Timer::TimerInt RA_time;
+	Timer::TimerInt BL_time;
+
+	float left_slope;
+	float right_slope;
 	float slope;
 
 	uint16_t data[58][4]; //[0]: number of white pixels; [1]: white row; [2]: black row; [3]: more white at left(0)/right(1)
@@ -73,13 +81,17 @@ private:
 	bool right_angle;
 	bool black_line;
 	bool bg;
-	bool continue_right_angle;
+//	bool continue_right_angle;
 	bool bias_crossroad;
 	bool continue_bias_crossroad;
+	bool first_black_line;
 
 	//black guide line
 	blacklineProcess blp;
 	uint16_t almost_white_number;
+
+	//vertical scaning
+	VerticalImageProcess vip;
 
 	//State
 	uint8_t STATE;

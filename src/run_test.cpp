@@ -43,7 +43,7 @@ RunTestApp *m_instance;
 RunTestApp::RunTestApp(SystemRes *res)
 : App(res),
 
-  s_kp(0.4f), //0.4, 0.03
+  s_kp(0.38f), //0.4, 0.03
   s_ki(0.0f),
   s_kd(0.045f),
 
@@ -59,10 +59,10 @@ RunTestApp::RunTestApp(SystemRes *res)
   r_kd(0.0004f),
 
   //19 ms
-  l_m_setpoint(2200.0f), //2900
-  r_m_setpoint(2200.0f),
+  l_m_setpoint(1500.0f), //2900
+  r_m_setpoint(1500.0f),
 
-  sd_setpoint(2200),
+  sd_setpoint(1500),
 
   show_error(0.0),
 
@@ -160,7 +160,6 @@ void RunTestApp::Run()
 	//Get image size (80*60)/byte_size
 	const uint16_t image_size = car->GetCameraW() * car->GetCameraH() / 8;
 	unique_ptr<Byte[]> image2(new Byte[image_size]);
-
 //	Pit m_pit(GetPitConfig(0, std::bind(&RunTestApp::peggy, this, std::placeholders::_1)));
 
 	Looper looper;
@@ -218,7 +217,7 @@ void RunTestApp::Run()
 			imageProcess.start(image2.get());
 
 			float error = imageProcess.Analyze();
-			imageProcess.printResult();
+//			imageProcess.printResult();
 
 			show_error = error;
 
@@ -228,8 +227,8 @@ void RunTestApp::Run()
 			car->SetTurning(s_result);
 
 			//software differential
-			l_m_setpoint =  (float)software_differential.turn_left_encoder(sd_setpoint,car->GetServo().GetDegree(),9500,3700);
-			r_m_setpoint = (float) software_differential.turn_right_encoder(sd_setpoint,car->GetServo().GetDegree(),9500,3700);
+			l_m_setpoint =  (float)software_differential.turn_left_encoder(sd_setpoint,car->GetServo().GetDegree(),SERVO_MID_DEGREE,3700);
+			r_m_setpoint = (float) software_differential.turn_right_encoder(sd_setpoint,car->GetServo().GetDegree(),SERVO_MID_DEGREE,3700);
 
 	};
 	looper.Repeat(11, servo, Looper::RepeatMode::kPrecise);

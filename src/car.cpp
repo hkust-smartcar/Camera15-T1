@@ -28,8 +28,8 @@ using namespace libutil;
 
 
 #define SERVO_ERR 1350
-#define SERVO_MID_DEGREE 9500 //9500
-#define SERVO_AMPLITUDE 3700 //3700
+#define SERVO_MID_DEGREE 8950  //9500
+#define SERVO_AMPLITUDE  5000 //3700
 
 namespace camera
 {
@@ -100,19 +100,19 @@ libsc::Led::Config GetLedConfig(const uint8_t id)
 	return product;
 }
 
-DirMotor::Config GetMotorConfig(const uint8_t id)
-{
-	DirMotor::Config product;
-	product.id = id;
-	return product;
-}
-
-//AlternateMotor::Config GetMotorConfig(const uint8_t id)
+//DirMotor::Config GetMotorConfig(const uint8_t id)
 //{
-//	AlternateMotor::Config product;
+//	DirMotor::Config product;
 //	product.id = id;
 //	return product;
 //}
+
+AlternateMotor::Config GetMotorConfig(const uint8_t id)
+{
+	AlternateMotor::Config product;
+	product.id = id;
+	return product;
+}
 
 FutabaS3010::Config GetServoConfig()
 {
@@ -142,8 +142,8 @@ Car::Car()
 		  m_lcd(GetLcdConfig()),
 		  m_leds{libsc::Led(GetLedConfig(0)), libsc::Led(GetLedConfig(1)), libsc::Led(GetLedConfig(2)),
 					libsc::Led(GetLedConfig(3))},
-		  m_motors{DirMotor(GetMotorConfig(0)), DirMotor(GetMotorConfig(1))},
-//		  m_motors{AlternateMotor(GetMotorConfig(0)),AlternateMotor(GetMotorConfig(1))},
+//		  m_motors{DirMotor(GetMotorConfig(0)), DirMotor(GetMotorConfig(1))},
+		  m_motors{AlternateMotor(GetMotorConfig(0)),AlternateMotor(GetMotorConfig(1))},
 		  m_servo(GetServoConfig())
 //		  m_uart(GetUartConfig())
 {

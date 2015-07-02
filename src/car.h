@@ -100,15 +100,15 @@ public:
 		return m_leds[id];
 	}
 
-	libsc::DirMotor& GetMotor(const uint8_t id)
-	{
-		return m_motors[id];
-	}
-
-//	libsc::AlternateMotor& GetMotor(const uint8_t id)
+//	libsc::DirMotor& GetMotor(const uint8_t id)
 //	{
 //		return m_motors[id];
 //	}
+
+	libsc::AlternateMotor& GetMotor(const uint8_t id)
+	{
+		return m_motors[id];
+	}
 
 
 	libsc::FutabaS3010& GetServo()
@@ -164,8 +164,8 @@ private:
 	libsc::Joystick m_joystick;
 	libsc::St7735r m_lcd;
 	libsc::Led m_leds[4];
-	libsc::DirMotor m_motors[2];
-//	libsc::AlternateMotor m_motors[2];
+//	libsc::DirMotor m_motors[2];
+	libsc::AlternateMotor m_motors[2];
 	libsc::FutabaS3010 m_servo;
 //	libsc::k60::JyMcuBt106 m_uart;
 };

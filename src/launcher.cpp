@@ -154,8 +154,20 @@ void Launcher::Run()
 	}
 }
 
+
+Gpi::Config getIR(Gpi::OnGpiEventListener isr)
+{
+	Gpi::Config config;
+	config.pin = Pin::Name::kPtc10;
+	config.interrupt = Pin::Config::Interrupt::kHigh;
+	config.isr = isr;
+	return config;
+
+}
+
 void Launcher::StartApp(const int id)
 {
+
 	switch (id)
 	{
 	case NORMAL_ID:
@@ -170,6 +182,14 @@ void Launcher::StartApp(const int id)
 	case RUN_TEST_ID:
 	{
 		RunTestApp app(GetSystemRes());
+
+//		Gpi IR(getIR([&] (Gpi*)
+//				{
+//					app.Run();
+//				}));
+//
+//		while (true)
+//		{}
 		app.Run();
 	}
 	break;

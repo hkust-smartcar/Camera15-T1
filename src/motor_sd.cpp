@@ -117,7 +117,7 @@ int SD::radius_mode(int encoder, char side , int degree)
 		{
 			de = degree;
 		}
-		float radius = 2600/(de);
+		float radius = 1500/(de);
 
 
 		if((degree * direction) < 0)
@@ -156,7 +156,7 @@ int SD::radius_mode(int encoder, char side , int degree)
 		{
 			de = degree;
 		}
-		float radius = 2600/(de);
+		float radius = 1500/(de);
 
 		if((degree * direction) < 0)
 		{

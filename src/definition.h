@@ -14,7 +14,7 @@
 #define TURNING 	 4
 #define OUT_OF_BOUND 5
 
-#define MIDPOINT_REF 37
+#define MIDPOINT_REF 42 //37
 
 //data info
 #define WHITECOUNT 0
@@ -23,12 +23,24 @@
 #define WHITEAT 3
 
 //checking midpoint
-#define MS 35	//check start
-#define ME 45   //check end
+#define MS 30	//check start
+#define ME 40   //check end
 
 //for array use
 #define LEFT 0
 #define RIGHT 1
 
+#define TOP 0
+#define BOTTOM 1
+
+#define ROW_VALUE 0
+#define SAME_COUNT 1
+#define START_AT 2
+
 #define START 0
 #define END 1
+
+//servo
+#define SERVO_ERR 1350
+#define SERVO_MID_DEGREE 8950  //9500
+#define SERVO_AMPLITUDE  5000 //3700

@@ -26,12 +26,12 @@ public:
 	{}
 	~blacklineProcess(){}
 
-	float Analyze(bool binary[58][78]);
+	float Analyze(bool binary[HEIGHT][WIDTH]);
 	bool detected();
 	bool approaching();
 
-	uint16_t midpoint[60];
-	uint16_t margin[60][2];
+	uint16_t midpoint[HEIGHT];
+	uint16_t margin[HEIGHT][2];
 	uint16_t narrow_count=0;
 	uint16_t nearest_blackGuideLine = 0;
 
