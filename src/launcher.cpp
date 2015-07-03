@@ -8,6 +8,7 @@
 
 #include <functional>
 
+#include <libbase/k60/adc.h>
 #include <libsc/button.h>
 #include <libsc/joystick.h>
 #include <libsc/lcd_typewriter.h>
@@ -155,18 +156,36 @@ void Launcher::Run()
 }
 
 
-Gpi::Config getIR(Gpi::OnGpiEventListener isr)
-{
-	Gpi::Config config;
-	config.pin = Pin::Name::kPtc10;
-	config.interrupt = Pin::Config::Interrupt::kHigh;
-	config.isr = isr;
-	return config;
-
-}
+//Gpi::Config getIR(Gpi::OnGpiEventListener isr)
+//{
+//	Gpi::Config config;
+//	config.pin = Pin::Name::kPtc10;
+//	config.interrupt = Pin::Config::Interrupt::kHigh;
+//	config.isr = isr;
+//	return config;
+//
+//}
 
 void Launcher::StartApp(const int id)
 {
+
+	Car *car = GetSystemRes()->car;
+
+	LcdTypewriter::Config writer_conf;
+	writer_conf.lcd = &car->GetLcd();
+	LcdTypewriter writer(writer_conf);
+	writer.SetTextColor(Lcd::kBlack);
+	writer.SetBgColor(Lcd::kWhite);
+
+	Adc::Config adc_c;
+	adc_c.adc = Adc::Name::kAdc0Ad8;
+	adc_c.resolution = Adc::Config::Resolution::k8Bit;
+	adc_c.speed = Adc::Config::SpeedMode::kExFast;
+
+	Adc adc(adc_c);
+	adc.StartConvert();
+
+	car->GetLcd().Clear(St7735r::kWhite);
 
 	switch (id)
 	{
@@ -188,8 +207,13 @@ void Launcher::StartApp(const int id)
 //					app.Run();
 //				}));
 //
-//		while (true)
-//		{}
+		while (adc.GetResultF()<1.0f)
+		{
+			car->GetLcd().SetRegion(Lcd::Rect(0,0,St7735r::GetW(),LcdTypewriter::GetFontH()));
+			writer.WriteString(String::Format("Ready...\n Reading: %f",adc.GetResultF()).c_str());
+//			System::DelayMs(20);
+
+		}
 		app.Run();
 	}
 	break;
