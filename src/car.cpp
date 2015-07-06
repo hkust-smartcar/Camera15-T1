@@ -89,7 +89,7 @@ libsc::Joystick::Config GetJoystickConfig()
 St7735r::Config GetLcdConfig()
 {
 	St7735r::Config product;
-	product.is_revert = true;
+	product.is_revert = false;
 	return product;
 }
 
@@ -126,7 +126,8 @@ JyMcuBt106::Config GetUartConfig()
 	JyMcuBt106::Config product;
 	product.id = 0;
 	product.baud_rate = libbase::k60::Uart::Config::BaudRate::k115200;
-	//product.tx_dma_channel = 0;
+	product.tx_buf_size = 8;
+	product.tx_dma_channel = 0;
 	return product;
 }
 
@@ -145,7 +146,7 @@ Car::Car()
 //		  m_motors{DirMotor(GetMotorConfig(0)), DirMotor(GetMotorConfig(1))},
 		  m_motors{AlternateMotor(GetMotorConfig(0)),AlternateMotor(GetMotorConfig(1))},
 		  m_servo(GetServoConfig())
-//		  m_uart(GetUartConfig())
+		  ,m_uart(GetUartConfig())
 {
 	m_servo.SetDegree(SERVO_MID_DEGREE);
 	m_leds[1].Switch();

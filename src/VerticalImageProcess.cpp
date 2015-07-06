@@ -196,6 +196,7 @@ void VerticalImageProcess::Analyze(bool binary[HEIGHT][WIDTH]){
 		}
 	}
 
+
 }
 
 }

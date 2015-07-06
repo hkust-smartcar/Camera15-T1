@@ -59,10 +59,10 @@ RunTestApp::RunTestApp(SystemRes *res)
   r_kd(0.0004f),
 
   //19 ms
-  l_m_setpoint(1500.0f), //2900
-  r_m_setpoint(1500.0f),
+  l_m_setpoint(1000.0f), //2900
+  r_m_setpoint(1000.0f),
 
-  sd_setpoint(1500),
+  sd_setpoint(1000),
 
   show_error(0.0),
 
@@ -72,7 +72,7 @@ RunTestApp::RunTestApp(SystemRes *res)
   l_speedControl(&l_m_setpoint, &l_kp, &l_ki, &l_kd, 0, 950),
   r_speedControl(&r_m_setpoint, &r_kp, &r_ki, &r_kd, 0, 950),
 
-  m_peter(),
+//  m_peter(),
 
   imageProcess(GetSystemRes()->car),
 
@@ -95,15 +95,17 @@ RunTestApp::RunTestApp(SystemRes *res)
 	m_instance = this;
 
 //for grapher use
-	m_peter.addWatchedVar(&sd_setpoint, "sd_setpoint");
-	m_peter.addWatchedVar(&show_error, "error");
+//	m_peter.addWatchedVar(&sd_setpoint, "sd_setpoint");
+//	m_peter.addWatchedVar(&show_error, "error");
 
 // servo
-	m_peter.addSharedVar(&s_kp,"skp");
-//	m_peter.addSharedVar(&s_ki,"ski");
-	m_peter.addSharedVar(&s_kd,"skd");
+//	m_peter.addSharedVar(&s_kp,"skp");
+////	m_peter.addSharedVar(&s_ki,"ski");
+//	m_peter.addSharedVar(&s_kd,"skd");
 
-	m_peter.Init(&PeggyListener);
+//	m_peter.Init(&PeggyListener);
+
+	scstudio.SetUart(&(GetSystemRes()->car->GetUart()));
 }
 
 //void RunTestApp::updateSPD(float error){
@@ -124,7 +126,7 @@ void RunTestApp::DetectEmergencyStop(){
 
 	const int count = car->GetEncoderCount(0);
 	const int count2 = car->GetEncoderCount(1);
-	if (!is_startup && (abs(count) + abs(count2) < 60))
+	if (!is_startup && (abs(count)+abs(count2)<60))//(abs(count) < 30 || abs(count2) < 30))
 	{
 		if (m_emergency_stop_state.is_triggered)
 		{
@@ -199,8 +201,63 @@ void RunTestApp::Run()
 	looper.Repeat(199, std::bind(&libsc::Led::Switch, &car->GetLed(0)), Looper::RepeatMode::kLoose);
 
 	//Send data to grapher
-	looper.Repeat(31, std::bind(&MyVarManager::sendWatchData, &m_peter), Looper::RepeatMode::kLoose);
+//	looper.Repeat(31, std::bind(&MyVarManager::sendWatchData, &m_peter), Looper::RepeatMode::kLoose);
 
+	//Send camera
+	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> sendCam =
+				[&](const Timer::TimerInt, const Timer::TimerInt)
+		{
+			scstudio.SendCamera(image2.get(),image_size);
+		};
+	looper.Repeat(50, sendCam, Looper::RepeatMode::kPrecise);
+
+	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> bt =
+			[&](const Timer::TimerInt, const Timer::TimerInt)
+	{
+		char received;
+		if(car->GetUart().PeekChar(&received)){
+			switch(received){
+			//move & stop
+			case 'f':
+				//reset pid
+				m_instance->l_speedControl.reset();
+				m_instance->r_speedControl.reset();
+				m_instance->servo_Control.reset();
+
+				if(m_instance->t)
+					m_instance->t = false;
+				else{
+
+					m_instance->m_start = System::Time();
+					m_instance->m_is_stop = false;
+					m_instance->t = true;
+				}
+				break;
+
+				//faster!
+			case 'r':
+				m_instance->l_m_setpoint += 100.0f;
+				m_instance->r_m_setpoint += 100.0f;
+				m_instance->sd_setpoint += 100.0f;
+				break;
+
+				//slower!
+			case 'R':
+				m_instance->l_m_setpoint -= 100.0f;
+				m_instance->r_m_setpoint -= 100.0f;
+				m_instance->sd_setpoint -= 100.0f;
+				break;
+			}
+		}
+
+		if(imageProcess.returnbg()){
+			scstudio.SendString("BG BG BG");
+		}
+		else{
+			scstudio.SendString("XBG XBG XBG");
+		}
+	};
+	looper.Repeat(31, bt, Looper::RepeatMode::kPrecise);
 
 	//Update servo error, input to and update servo PID controller
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> servo =
@@ -251,43 +308,43 @@ RunTestApp &getInstance(void)
 }
 
 //Bluetooth control
-void RunTestApp::PeggyListener(const std::vector<Byte> &bytes)
-{
-
-	switch (bytes[0])
-	{
-	//move & stop
-	case 'f':
-		//reset pid
-		m_instance->l_speedControl.reset();
-		m_instance->r_speedControl.reset();
-		m_instance->servo_Control.reset();
-
-		if(m_instance->t)
-			m_instance->t = false;
-		else{
-
-			m_instance->m_start = System::Time();
-			m_instance->m_is_stop = false;
-			m_instance->t = true;
-		}
-		break;
-
-	//faster!
-	case 'r':
-		m_instance->l_m_setpoint += 100.0f;
-		m_instance->r_m_setpoint += 100.0f;
-		m_instance->sd_setpoint += 100.0f;
-		break;
-
-	//slower!
-	case 'R':
-		m_instance->l_m_setpoint -= 100.0f;
-		m_instance->r_m_setpoint -= 100.0f;
-		m_instance->sd_setpoint -= 100.0f;
-		break;
-	}
-}
+//bool RunTestApp::PeggyListener(const std::vector<Byte> &bytes)
+//{
+//
+//	switch (bytes[0])
+//	{
+//	//move & stop
+//	case 'f':
+//		//reset pid
+//		m_instance->l_speedControl.reset();
+//		m_instance->r_speedControl.reset();
+//		m_instance->servo_Control.reset();
+//
+//		if(m_instance->t)
+//			m_instance->t = false;
+//		else{
+//
+//			m_instance->m_start = System::Time();
+//			m_instance->m_is_stop = false;
+//			m_instance->t = true;
+//		}
+//		break;
+//
+//	//faster!
+//	case 'r':
+//		m_instance->l_m_setpoint += 100.0f;
+//		m_instance->r_m_setpoint += 100.0f;
+//		m_instance->sd_setpoint += 100.0f;
+//		break;
+//
+//	//slower!
+//	case 'R':
+//		m_instance->l_m_setpoint -= 100.0f;
+//		m_instance->r_m_setpoint -= 100.0f;
+//		m_instance->sd_setpoint -= 100.0f;
+//		break;
+//	}
+//}
 
 
 }

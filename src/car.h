@@ -116,10 +116,10 @@ public:
 		return m_servo;
 	}
 
-//	libsc::k60::JyMcuBt106& GetUart()
-//	{
-//		return m_uart;
-//	}
+	libsc::k60::JyMcuBt106& GetUart()
+	{
+		return m_uart;
+	}
 
 	/**
 	 * Set interrupt for the button, effectively it will reinit the button. Only
@@ -167,7 +167,7 @@ private:
 //	libsc::DirMotor m_motors[2];
 	libsc::AlternateMotor m_motors[2];
 	libsc::FutabaS3010 m_servo;
-//	libsc::k60::JyMcuBt106 m_uart;
+	libsc::k60::JyMcuBt106 m_uart;
 };
 
 }

@@ -80,7 +80,7 @@ public:
 		static TypeId *m_instance;
 	};
 
-	typedef std::function<void(const std::vector<Byte>&)> OnReceiveListener;
+	typedef std::function<void(const std::vector<Byte> &bytes)> OnReceiveListener;
 
 	explicit MyVarManager(void);
 	~MyVarManager(void);
@@ -125,7 +125,7 @@ private:
 
 	std::vector<Byte>				rx_buffer;
 
-	static bool listener(const std::vector<Byte> &bytes);
+	static bool listener(const Byte *data, const size_t size);
 
 	SysTick::Config getTimerConfig(void);
 	JyMcuBt106::Config get106UartConfig(const uint8_t id);

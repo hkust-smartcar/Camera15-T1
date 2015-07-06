@@ -319,6 +319,11 @@ void ImageProcess::start(Byte* image){
 			margin[i][RIGHT] = libutil::Clamp((float)RS,1.0f/right_new_slope + margin[i-1][RIGHT],(float)RE);
 		}
 
+//		for(int i = vip.highest_cont_margin; i< CE-1 ; i++){
+//			margin[i][LEFT] = libutil::Clamp((float)RS,1.0f/left_new_slope + margin[i-1][LEFT],(float)RE);
+//			margin[i][RIGHT] = libutil::Clamp((float)RS,1.0f/right_new_slope + margin[i-1][RIGHT],(float)RE);
+//		}
+
 		for(int i= CS; i<CE; i++){
 			midpoint[i] = (margin[i][LEFT]+margin[i][RIGHT])/2;
 		}
@@ -654,6 +659,16 @@ void ImageProcess::printResult(){
 			car->GetLcd().FillBits(0,0xFFFF,ptr,WIDTH);
 		}
 
+		for(uint8_t i=CS; i<CE; i++){
+			car->GetLcd().SetRegion({blp.margin[i][0], i, 1, 1});
+			car->GetLcd().FillColor(St7735r::kYellow);
+			car->GetLcd().SetRegion({blp.margin[i][1], i, 1, 1});
+			car->GetLcd().FillColor(St7735r::kYellow);
+		}
+
+//		car->GetLcd().SetRegion(Lcd::Rect(0,0,WIDTH,HEIGHT));
+//		car->GetLcd().FillColor(Lcd::kWhite);
+
 		// print margin found
 		for(uint16_t i=CS; i<CE; i++)
 		{
@@ -663,63 +678,58 @@ void ImageProcess::printResult(){
 			car->GetLcd().FillColor(St7735r::kBlue);
 		}
 
-		for(uint16_t i=RS; i<RE; i++){
-			car->GetLcd().SetRegion(libsc::Lcd::Rect(i, vip.margin[i][TOP], 1, 1));
-			car->GetLcd().FillColor(St7735r::kYellow);
-			car->GetLcd().SetRegion(libsc::Lcd::Rect(i, vip.margin[i][BOTTOM], 1, 1));
-			car->GetLcd().FillColor(St7735r::kYellow);
-		}
-
-		for(uint8_t i=RS; i<RE; i++){
-
-			if(i<=vip.top_cont_last){
-				car->GetLcd().SetRegion(libsc::Lcd::Rect(vip.cont_top_margin[i][START_AT], vip.cont_top_margin[i][ROW_VALUE]-2, 1, 5));
-				car->GetLcd().FillColor(St7735r::kRed);
-			}
-
-			if(i<=vip.bottom_cont_last){
-				car->GetLcd().SetRegion(libsc::Lcd::Rect(vip.cont_bottom_margin[i][START_AT], vip.cont_bottom_margin[i][ROW_VALUE]-2, 1, 5));
-				car->GetLcd().FillColor(St7735r::kRed);
-			}
-		}
-
-//		for(uint16_t i=CS; i<CE; i++){
+//		for(uint16_t i=RS; i<RE; i++){
 //
-//			car->GetLcd().SetRegion({midpoint[i], i, 1, 1});
-//			car->GetLcd().FillColor(St7735r::kRed);
+//			car->GetLcd().SetRegion(Lcd::Rect(i, vip.margin[i][TOP], 1, 1));
+//			car->GetLcd().FillColor(St7735r::kBlack);
+//			car->GetLcd().SetRegion(Lcd::Rect(i, vip.margin[i][BOTTOM], 1, 1));
+//			car->GetLcd().FillColor(St7735r::kBlack);
 //		}
 
-		car->GetLcd().SetRegion(libsc::Lcd::Rect(0, 64, St7735r::GetW(), LcdTypewriter::GetFontH()));
-		writer.WriteString(String::Format("%ld,%ld",vip.top_len,vip.bottom_len).c_str());
+//		for(uint8_t i=RS; i<RE; i++){
+//
+//			if(i<=vip.top_cont_last){
+//				car->GetLcd().SetRegion(Lcd::Rect(vip.cont_top_margin[i][START_AT], vip.cont_top_margin[i][ROW_VALUE]-2, 1, 5));
+//				car->GetLcd().FillColor(St7735r::kRed);
+//			}
+//
+//			if(i<=vip.bottom_cont_last){
+//				car->GetLcd().SetRegion(Lcd::Rect(vip.cont_bottom_margin[i][START_AT], vip.cont_bottom_margin[i][ROW_VALUE]-2, 1, 5));
+//				car->GetLcd().FillColor(St7735r::kRed);
+//			}
+//		}
 
-		car->GetLcd().SetRegion(libsc::Lcd::Rect(0, 80, St7735r::GetW(), LcdTypewriter::GetFontH()));
-		if(right_angle){
-			writer.WriteString("RRR");
+		for(uint16_t i=CS; i<CE; i++){
+
+			car->GetLcd().SetRegion({midpoint[i], i, 1, 1});
+			car->GetLcd().FillColor(St7735r::kRed);
+		}
+
+		car->GetLcd().SetRegion(Lcd::Rect(0, 64, St7735r::GetW(), LcdTypewriter::GetFontH()));
+		writer.WriteString(String::Format("%ld",blp.narrow_count).c_str());
+
+		car->GetLcd().SetRegion(Lcd::Rect(0, 80, St7735r::GetW(), LcdTypewriter::GetFontH()));
+		if(bg){
+			writer.WriteString(String::Format("bgbgbg: %ld",blp.nearest_blackGuideLine).c_str());
 		}
 		else{
-			writer.WriteString("!R!R!R");
+			writer.WriteString(String::Format("!bg!bg!bg: %ld",blp.nearest_blackGuideLine).c_str());
 		}
 
-		car->GetLcd().SetRegion(libsc::Lcd::Rect(0, 96, St7735r::GetW(), LcdTypewriter::GetFontH()));
-		if(black_line){
-			writer.WriteString("BLBLBL");
-		}
-		else{
-			writer.WriteString("!BL!BL!BL");
-		}
-
-		car->GetLcd().SetRegion(libsc::Lcd::Rect(0, 112, St7735r::GetW(), LcdTypewriter::GetFontH()));
-		writer.WriteString(String::Format("%d",vip.highest_cont_margin).c_str());
-
-
-		car->GetLcd().SetRegion(libsc::Lcd::Rect(0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()));
-		writer.WriteString(String::Format("%d",vip.lowest_cont_margin).c_str());
-
-		car->GetLcd().SetRegion(libsc::Lcd::Rect(0, vip.highest_cont_margin, WIDTH, 1));
-		car->GetLcd().FillColor(St7735r::kPurple);
-
-		car->GetLcd().SetRegion(libsc::Lcd::Rect(0, vip.lowest_cont_margin, WIDTH, 1));
+		car->GetLcd().SetRegion(Lcd::Rect(0,blp.nearest_blackGuideLine,WIDTH,1));
 		car->GetLcd().FillColor(St7735r::kGreen);
+
+//		car->GetLcd().SetRegion(Lcd::Rect(0,vip.highest_cont_margin,WIDTH,1));
+//		car->GetLcd().FillColor(St7735r::kPurple);
+//
+//		car->GetLcd().SetRegion(Lcd::Rect(0,vip.lowest_cont_margin,WIDTH,1));
+//		car->GetLcd().FillColor(St7735r::kGreen);
+//
+//		car->GetLcd().SetRegion(Lcd::Rect(0, 64, St7735r::GetW(), LcdTypewriter::GetFontH()));
+//		writer.WriteString(String::Format("%ld,%ld",vip.top_len,vip.bottom_len).c_str());
+//
+//		car->GetLcd().SetRegion(Lcd::Rect(0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()));
+//		writer.WriteString(String::Format("%ld",vip.lowest_cont_margin).c_str());
 
 	}
 

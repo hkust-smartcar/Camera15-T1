@@ -82,9 +82,10 @@ MyVarManager::~MyVarManager()
 	watchedObjMng.clear();
 }
 
-bool MyVarManager::listener(const std::vector<Byte> &bytes)
+bool MyVarManager::listener(const Byte *data, const size_t size)
 {
-	m_pd_instance->rx_buffer.insert(m_pd_instance->rx_buffer.end(), bytes.begin(), bytes.end());
+	std::vector<Byte> vec(data, data + size);
+	m_pd_instance->rx_buffer.insert(m_pd_instance->rx_buffer.end(), vec.begin(), vec.end());
 
 	if (m_pd_instance->rx_buffer.size() < m_pd_instance->rx_threshold)
 		return true;

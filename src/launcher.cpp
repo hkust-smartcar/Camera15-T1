@@ -29,6 +29,7 @@
 using namespace libsc;
 using namespace libsc::k60;
 using namespace libutil;
+using namespace libbase::k60;
 
 #define NORMAL_ID 0
 #define CAR_TEST_ID 1
@@ -201,17 +202,10 @@ void Launcher::StartApp(const int id)
 	case RUN_TEST_ID:
 	{
 		RunTestApp app(GetSystemRes());
-
-//		Gpi IR(getIR([&] (Gpi*)
-//				{
-//					app.Run();
-//				}));
-//
 		while (adc.GetResultF()<1.0f)
 		{
 			car->GetLcd().SetRegion(Lcd::Rect(0,0,St7735r::GetW(),LcdTypewriter::GetFontH()));
-			writer.WriteString(String::Format("Ready...\n Reading: %f",adc.GetResultF()).c_str());
-//			System::DelayMs(20);
+			writer.WriteString("Ready...");
 
 		}
 		app.Run();

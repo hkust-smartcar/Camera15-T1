@@ -15,9 +15,10 @@
 #include <libsc/lcd_typewriter.h>
 #include <libutil/positional_pid_controller.h>
 #include "pid_controller.h"
-#include <libsc/k60/jy_mcu_bt_106.h>
+//#include <libsc/k60/jy_mcu_bt_106.h>
 #include "motor_sd.h"
 #include "definition.h"
+#include <libutil/sc_studio.h>
 
 using namespace std;
 using namespace libsc::k60;
@@ -82,7 +83,7 @@ private:
 
 	//software differential
 	SD software_differential;
-	MyVarManager m_peter;
+//	MyVarManager m_peter;
 	ImageProcess imageProcess;
 
 	struct EmergencyStopState
@@ -95,9 +96,11 @@ private:
 	bool m_is_stop;
 	EmergencyStopState m_emergency_stop_state;
 
-	static void PeggyListener(const std::vector<Byte> &bytes);
+	ScStudio scstudio;
+
+//	static bool PeggyListener(const std::vector<Byte> &bytes);
 //	void updateSPD(float error);
-	void peggy(libbase::k60::Pit* pit);
+//	void peggy(libbase::k60::Pit* pit);
 	void DetectEmergencyStop();
 
 

@@ -40,6 +40,7 @@ public:
 	{}
 	void printResult();
 	int getState(){return STATE;}
+	bool returnbg(){return bg;}
 
 private:
 
