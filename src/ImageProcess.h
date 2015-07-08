@@ -65,12 +65,7 @@ private:
 	uint8_t black_line_end;
 	uint8_t double_check_black_end;
 
-	Timer::TimerInt RA_time;
-	Timer::TimerInt BL_time;
-
-	float left_slope;
-	float right_slope;
-	float slope;
+	bool RA_dir;
 
 	uint16_t data[58][4]; //[0]: number of white pixels; [1]: white row; [2]: black row; [3]: more white at left(0)/right(1)
 

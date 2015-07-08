@@ -13,6 +13,7 @@
 #define RIGHT_ANGLE  3
 #define TURNING 	 4
 #define OUT_OF_BOUND 5
+#define BLACK_GUIDE	 6
 
 #define MIDPOINT_REF 42 //37
 

@@ -111,6 +111,8 @@ public:
 
 	void sendWatchData(void);
 
+	JyMcuBt106& GetUart(){return m_uart;}
+
 private:
 
 	OnReceiveListener				m_origin_listener;
@@ -118,8 +120,8 @@ private:
 	std::vector<ObjMng>				sharedObjMng;
 	std::vector<ObjMng>				watchedObjMng;
 
-	bool							isStarted;
 	const Byte						rx_threshold;
+	bool							isStarted;
 
 	JyMcuBt106						m_uart;
 
