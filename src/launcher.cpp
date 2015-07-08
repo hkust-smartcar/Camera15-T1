@@ -186,6 +186,8 @@ void Launcher::StartApp(const int id)
 	{
 		RunTestApp app(GetSystemRes());
 
+		float adc_result = car->GetAdc().GetResultF();
+
 		while (adc_result<0.5f)
 		{
 			if(car->GetBuzzer().GetBeep()){

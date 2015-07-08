@@ -82,8 +82,6 @@ private:
 	//software differential
 	SD software_differential;
 
-	MyVarManager m_peter;
-
 	//ImageProcess
 	ImageProcess imageProcess;
 
@@ -98,7 +96,6 @@ private:
 	bool m_is_stop;
 	EmergencyStopState m_emergency_stop_state;
 
-	static void PeggyListener(const std::vector<Byte> &bytes);
 //	void updateSPD(float error);
 	void peggy(libbase::k60::Pit* pit);
 	void DetectEmergencyStop();

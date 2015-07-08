@@ -73,15 +73,13 @@ RunTestApp::RunTestApp(SystemRes *res)
   l_speedControl(&l_m_setpoint, &l_kp, &l_ki, &l_kd, 0, 950),
   r_speedControl(&r_m_setpoint, &r_kp, &r_ki, &r_kd, 0, 950),
 
-
-  m_peter(),
-
   imageProcess(GetSystemRes()->car),
 
   m_start(0),
   m_is_stop(false),
 
   m_peter(),
+
   prev_adc(0),
   gpo(0)
 
