@@ -28,12 +28,7 @@ ImageProcess::ImageProcess(Car* car_ptr)
 	black_line_end(CS),
 	double_check_black_end(CS),
 
-	RA_time(System::Time()),
-	BL_time(System::Time()),
-
-	left_slope(0),
-	right_slope(0),
-	slope(0),
+	RA_dir(false),
 
 	crossroad(false),
 	l_byebye(false),
@@ -82,6 +77,7 @@ void ImageProcess::start(Byte* image){
 
 	//for right angle
 	right_angle = false;
+	RA_dir = false;
 //	continue_right_angle=false;
 
 	//for special settings
@@ -89,10 +85,6 @@ void ImageProcess::start(Byte* image){
 		black_line = false;
 //	}
 	bg = false;
-
-	//check if straight road
-	left_slope = 0;
-	right_slope = 0;
 
 	//filter and convert to bits
 	medianFilter.medianFilter(image,bitmap);
@@ -206,13 +198,6 @@ void ImageProcess::start(Byte* image){
 
 /************************COLLECT EVIDENCE***********************/
 
-	//calculate slope for each side margin
-	float dH = 10.0f;
-	float dW1 = margin[10][LEFT]-margin[20][LEFT];
-	float dW2 = margin[10][RIGHT]-margin[20][RIGHT];
-	left_slope = dH/dW1;
-	right_slope = dH/dW2;
-
 	//find black row (from top)
 	double_check_black_end = CS;
 	//if start from not black row-> find first black
@@ -270,6 +255,8 @@ void ImageProcess::start(Byte* image){
 	else
 		white_count = 0;
 
+	uint8_t checkrow = libutil::Clamp(CS,vip.highest_cont_margin-5,CE);
+
 /************************DEFINE CASES***********************/
 
 	//black guide line
@@ -284,7 +271,26 @@ void ImageProcess::start(Byte* image){
 		}
 	}
 
-	else if(vip.top_len>35 && vip.bottom_len>35 && abs(vip.bottom_len-vip.top_len)<30){
+
+	//right angle
+	else if(data[checkrow][ISBLACK]==1 && (vip.top_len>35 && vip.bottom_len>35)){
+		//		black_line = false;
+		right_angle = true;
+
+		float h1 = HEIGHT-1;
+		float h2 = black_end+2;
+		float mid1 = midpoint[HEIGHT-1];
+		float mid2 = midpoint[black_end+2];
+
+		float slope = (h1-h2)/(mid1-mid2);
+
+		if(slope<0.0f){
+			RA_dir = true;
+		}
+	}
+
+	//black line, keep until right angle
+	else if(vip.top_len>35 && vip.bottom_len>35 && vip.bottom_len>vip.top_len){//&& abs(vip.bottom_len-vip.top_len)<30){
 
 		black_line = true;
 
@@ -322,7 +328,6 @@ void ImageProcess::start(Byte* image){
 		for(int i= CS; i<CE; i++){
 			midpoint[i] = (margin[i][LEFT]+margin[i][RIGHT])/2;
 		}
-
 
 	}
 
@@ -544,7 +549,7 @@ void ImageProcess::start(Byte* image){
 	//to be safe
 	else
 	{
-//		right_angle = false;
+		right_angle = false;
 		crossroad = false;
 		bg = false;
 	}
@@ -572,10 +577,6 @@ float ImageProcess::Analyze(void){
 		prev_error = blp.Analyze(bitmap);
 		return blp.Analyze(bitmap);
 	}
-//
-//	else if(black_line){
-//		return prev_error;
-//	}
 
 	else if(r_byebye)
 	{
@@ -590,40 +591,29 @@ float ImageProcess::Analyze(void){
 		prev_error = -10000;
 		return -10000;
 	}
-/*
-	else if(continue_right_angle){
-		STATE = RIGHT_ANGLE;
-		if(prev_error>0)
-			prev_error-=90;
-		else
-			prev_error+=90;
-		return prev_error;
-
-	}
 
 	else if (right_angle){
 		STATE = RIGHT_ANGLE;
-		if(slope<0.0f){
-			prev_error = -10000;
+		if(RA_dir){
 			return -10000; //turn right
 		}
 		else{
-			prev_error = 10000;
 			return 10000; //turn left
 		}
 	}
-*/
-//	else if (continue_bias_crossroad){
-//		return prev_error;
-//	}
 
 	else if (error>2||error<-2)
 	{
-		STATE = TURNING;
 
-//		if(bias_crossroad){
-//			continue_bias_crossroad = true;
-//		}
+		if(bg){
+			STATE = BLACK_GUIDE;
+		}
+		else if(crossroad){
+			STATE = CROSSROAD;
+		}
+		else{
+			STATE = TURNING;
+		}
 
 		//*FACTOR as error is too small
 		prev_error = error*FACTOR;
@@ -671,7 +661,6 @@ void ImageProcess::printResult(){
 		}
 
 		for(uint8_t i=RS; i<RE; i++){
-
 			if(i<=vip.top_cont_last){
 				car->GetLcd().SetRegion(libsc::Lcd::Rect(vip.cont_top_margin[i][START_AT], vip.cont_top_margin[i][ROW_VALUE]-2, 1, 5));
 				car->GetLcd().FillColor(St7735r::kRed);
@@ -708,6 +697,16 @@ void ImageProcess::printResult(){
 			writer.WriteString("!BL!BL!BL");
 		}
 
+//		car->GetLcd().SetRegion(Lcd::Rect(0,blp.nearest_blackGuideLine,WIDTH,1));
+//		car->GetLcd().FillColor(St7735r::kGreen);
+
+		car->GetLcd().SetRegion(Lcd::Rect(0,vip.highest_cont_margin,WIDTH,1));
+		car->GetLcd().FillColor(St7735r::kPurple);
+
+		car->GetLcd().SetRegion(Lcd::Rect(0,vip.lowest_cont_margin,WIDTH,1));
+		car->GetLcd().FillColor(St7735r::kGreen);
+
+
 		car->GetLcd().SetRegion(libsc::Lcd::Rect(0, 112, St7735r::GetW(), LcdTypewriter::GetFontH()));
 		writer.WriteString(String::Format("%d",vip.highest_cont_margin).c_str());
 
@@ -715,11 +714,33 @@ void ImageProcess::printResult(){
 		car->GetLcd().SetRegion(libsc::Lcd::Rect(0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()));
 		writer.WriteString(String::Format("%d",vip.lowest_cont_margin).c_str());
 
-		car->GetLcd().SetRegion(libsc::Lcd::Rect(0, vip.highest_cont_margin, WIDTH, 1));
-		car->GetLcd().FillColor(St7735r::kPurple);
+		car->GetLcd().SetRegion(Lcd::Rect(0, 80, St7735r::GetW(), LcdTypewriter::GetFontH()));
+		if(right_angle){
+			writer.WriteString("RRR");
+		}
+		else{
+			writer.WriteString("!R!R!R");
+		}
 
-		car->GetLcd().SetRegion(libsc::Lcd::Rect(0, vip.lowest_cont_margin, WIDTH, 1));
-		car->GetLcd().FillColor(St7735r::kGreen);
+		car->GetLcd().SetRegion(Lcd::Rect(0, 96, St7735r::GetW(),LcdTypewriter::GetFontH()));
+		if(RA_dir){
+			writer.WriteString("to right");
+		}
+		else{
+			writer.WriteString("to left");
+		}
+
+		car->GetLcd().SetRegion(Lcd::Rect(0,112, St7735r::GetW(), LcdTypewriter::GetFontH()));
+		if(black_line){
+			writer.WriteString("BLBLBL");
+		}
+		else{
+			writer.WriteString("!BL!BL!BL");
+		}
+
+//
+//		car->GetLcd().SetRegion(Lcd::Rect(0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()));
+//		writer.WriteString(String::Format("%ld",vip.lowest_cont_margin).c_str());
 
 	}
 

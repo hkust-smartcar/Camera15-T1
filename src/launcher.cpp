@@ -155,17 +155,6 @@ void Launcher::Run()
 	}
 }
 
-
-//Gpi::Config getIR(Gpi::OnGpiEventListener isr)
-//{
-//	Gpi::Config config;
-//	config.pin = Pin::Name::kPtc10;
-//	config.interrupt = Pin::Config::Interrupt::kHigh;
-//	config.isr = isr;
-//	return config;
-//
-//}
-
 void Launcher::StartApp(const int id)
 {
 
@@ -177,13 +166,8 @@ void Launcher::StartApp(const int id)
 	writer.SetTextColor(Lcd::kBlack);
 	writer.SetBgColor(Lcd::kWhite);
 
-	Adc::Config adc_c;
-	adc_c.adc = Adc::Name::kAdc0Ad8;
-	adc_c.resolution = Adc::Config::Resolution::k8Bit;
-	adc_c.speed = Adc::Config::SpeedMode::kExFast;
-
-	Adc adc(adc_c);
-	adc.StartConvert();
+	car->GetAdc().StartConvert();
+	car->GetGpo().Set(1);
 
 	car->GetLcd().Clear(St7735r::kWhite);
 
@@ -202,17 +186,18 @@ void Launcher::StartApp(const int id)
 	{
 		RunTestApp app(GetSystemRes());
 
-//		Gpi IR(getIR([&] (Gpi*)
-//				{
-//					app.Run();
-//				}));
-//
-		while (adc.GetResultF()<1.0f)
+		while (adc_result<0.5f)
 		{
+			if(car->GetBuzzer().GetBeep()){
+				car->GetBuzzer().SetBeep(false);
+			}
+			else{
+				car->GetBuzzer().SetBeep(true);
+			}
+			adc_result = car->GetAdc().GetResultF();
 			car->GetLcd().SetRegion(Lcd::Rect(0,0,St7735r::GetW(),LcdTypewriter::GetFontH()));
-			writer.WriteString(String::Format("Ready...\n Reading: %f",adc.GetResultF()).c_str());
-//			System::DelayMs(20);
-
+			writer.WriteString(String::Format("Ready...%f",adc_result).c_str());
+			System::DelayMs(20);
 		}
 		app.Run();
 	}

@@ -15,7 +15,6 @@
 #include <libsc/lcd_typewriter.h>
 #include <libutil/positional_pid_controller.h>
 #include "pid_controller.h"
-#include <libsc/k60/jy_mcu_bt_106.h>
 #include "motor_sd.h"
 #include "definition.h"
 
@@ -82,9 +81,13 @@ private:
 
 	//software differential
 	SD software_differential;
+
 	MyVarManager m_peter;
+
+	//ImageProcess
 	ImageProcess imageProcess;
 
+	//Safety
 	struct EmergencyStopState
 		{
 			libsc::Timer::TimerInt trigger_time = 0;
@@ -99,6 +102,13 @@ private:
 //	void updateSPD(float error);
 	void peggy(libbase::k60::Pit* pit);
 	void DetectEmergencyStop();
+
+	//Grapher
+	MyVarManager m_peter;
+	static bool PeggyListener(const std::vector<Byte> &bytes);
+
+	float prev_adc;
+	float gpo;
 
 
 };

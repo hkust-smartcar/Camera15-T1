@@ -130,6 +130,30 @@ JyMcuBt106::Config GetUartConfig()
 	return product;
 }
 
+SimpleBuzzer::Config GetBuzzerConfig()
+{
+	SimpleBuzzer::Config product;
+	product.id = 0;
+	return product;
+}
+
+
+libbase::k60::Gpo::Config GetGpoConfig()
+{
+	libbase::k60::Gpo::Config product;
+	product.pin = Pin::Name::kPtb1;
+	return product;
+}
+
+libbase::k60::Adc::Config GetAdcConfig()
+{
+	libbase::k60::Adc::Config product;
+	product.adc = Adc::Name::kAdc0Ad8;
+	product.resolution = Adc::Config::Resolution::k8Bit;
+	product.speed = Adc::Config::SpeedMode::kExFast;
+	return product;
+}
+
 }
 
 Car::Car()
@@ -145,7 +169,11 @@ Car::Car()
 //		  m_motors{DirMotor(GetMotorConfig(0)), DirMotor(GetMotorConfig(1))},
 		  m_motors{AlternateMotor(GetMotorConfig(0)),AlternateMotor(GetMotorConfig(1))},
 		  m_servo(GetServoConfig())
-//		  m_uart(GetUartConfig())
+//		  ,m_uart(GetUartConfig())
+		  ,m_buzzer(GetBuzzerConfig()),
+		  m_gpo(GetGpoConfig()),
+		  m_adc(GetAdcConfig())
+
 {
 	m_servo.SetDegree(SERVO_MID_DEGREE);
 	m_leds[1].Switch();

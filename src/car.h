@@ -21,6 +21,9 @@
 #include <libsc/led.h>
 #include <libsc/k60/ov7725.h>
 #include <libsc/st7735r.h>
+#include <libsc/simple_buzzer.h>
+#include <libbase/k60/gpio.h>
+#include <libbase/k60/adc.h>
 
 #include "MyVarManager.h"
 
@@ -116,10 +119,33 @@ public:
 		return m_servo;
 	}
 
+
 //	libsc::k60::JyMcuBt106& GetUart()
 //	{
 //		return m_uart;
 //	}
+
+	libsc::SimpleBuzzer& GetBuzzer()
+	{
+		return m_buzzer;
+	}
+
+//	libsc::k60::JyMcuBt106& GetUart()
+//	{
+//		return m_uart;
+//	}
+
+
+	libbase::k60::Gpo& GetGpo()
+	{
+		return m_gpo;
+	}
+
+	libbase::k60::Adc& GetAdc()
+	{
+		return m_adc;
+	}
+
 
 	/**
 	 * Set interrupt for the button, effectively it will reinit the button. Only
@@ -167,7 +193,10 @@ private:
 //	libsc::DirMotor m_motors[2];
 	libsc::AlternateMotor m_motors[2];
 	libsc::FutabaS3010 m_servo;
+	libsc::SimpleBuzzer m_buzzer;
 //	libsc::k60::JyMcuBt106 m_uart;
+	libbase::k60::Gpo m_gpo;
+	libbase::k60::Adc m_adc;
 };
 
 }

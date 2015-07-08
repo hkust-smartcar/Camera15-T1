@@ -20,6 +20,7 @@
 #include <libutil/misc.h>
 #include "libutil/misc.h"
 #include "libsc/joystick.h"
+#include <libsc/simple_buzzer.h>
 
 #include "car.h"
 #include "system_res.h"
@@ -43,7 +44,7 @@ RunTestApp *m_instance;
 RunTestApp::RunTestApp(SystemRes *res)
 : App(res),
 
-  s_kp(0.38f), //0.4, 0.03
+  s_kp(0.41f), //0.4, 0.03
   s_ki(0.0f),
   s_kd(0.045f),
 
@@ -59,10 +60,10 @@ RunTestApp::RunTestApp(SystemRes *res)
   r_kd(0.0004f),
 
   //19 ms
-  l_m_setpoint(1500.0f), //2900
-  r_m_setpoint(1500.0f),
+  l_m_setpoint(2000.0f), //2900
+  r_m_setpoint(2000.0f),
 
-  sd_setpoint(1500),
+  sd_setpoint(2000),
 
   show_error(0.0),
 
@@ -72,12 +73,18 @@ RunTestApp::RunTestApp(SystemRes *res)
   l_speedControl(&l_m_setpoint, &l_kp, &l_ki, &l_kd, 0, 950),
   r_speedControl(&r_m_setpoint, &r_kp, &r_ki, &r_kd, 0, 950),
 
+
   m_peter(),
 
   imageProcess(GetSystemRes()->car),
 
   m_start(0),
-  m_is_stop(false)
+  m_is_stop(false),
+
+  m_peter(),
+  prev_adc(0),
+  gpo(0)
+
 
 {
 	//raw data: left & right encoder, servo angle
@@ -104,11 +111,9 @@ RunTestApp::RunTestApp(SystemRes *res)
 	m_peter.addSharedVar(&s_kd,"skd");
 
 	m_peter.Init(&PeggyListener);
-}
+	prev_adc = GetSystemRes()->car->GetAdc().GetResultF();
 
-//void RunTestApp::updateSPD(float error){
-//
-//}
+}
 
 void RunTestApp::DetectEmergencyStop(){
 
@@ -160,9 +165,9 @@ void RunTestApp::Run()
 	//Get image size (80*60)/byte_size
 	const uint16_t image_size = car->GetCameraW() * car->GetCameraH() / 8;
 	unique_ptr<Byte[]> image2(new Byte[image_size]);
-//	Pit m_pit(GetPitConfig(0, std::bind(&RunTestApp::peggy, this, std::placeholders::_1)));
 
 	Looper looper;
+	m_start = System::Time();
 
 	//Update encoder count, input to and update speed PID controller
 		std::function<void(const Timer::TimerInt, const Timer::TimerInt)> encoder =
@@ -192,7 +197,6 @@ void RunTestApp::Run()
 					//
 				};
 		looper.Repeat(19, encoder, Looper::RepeatMode::kLoose);
-	//	looper.Repeat(89, encoder, Looper::RepeatMode::kPrecise);
 
 
 	//breathing led- indicate if program hang or not
@@ -201,6 +205,53 @@ void RunTestApp::Run()
 	//Send data to grapher
 	looper.Repeat(31, std::bind(&MyVarManager::sendWatchData, &m_peter), Looper::RepeatMode::kLoose);
 
+	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> stop =
+			[&](const Timer::TimerInt, const Timer::TimerInt)
+	{
+
+		static bool is_startup = true;
+		const Timer::TimerInt time = System::Time();
+		if (is_startup && Timer::TimeDiff(time, m_start) > 2000)
+		{
+			is_startup = false;
+		}
+		//if ADC reading = 0, light is detected
+		// periodically on and off GPO
+
+		//if GPO is off, turn it on
+		if(!car->GetGpo().Get()){
+			car->GetGpo().Set(1);
+			gpo = 1;
+			prev_adc = 2.0f;
+			car->GetBuzzer().SetBeep(false);
+			//prev_adc = car->GetAdc().GetResultF();
+		}
+		//if GPO is on
+		else{
+			//if ADC from 0 to 2, stop!
+			if(!is_startup && (car->GetAdc().GetResultF()-prev_adc)>1.0f){
+				t = false;
+				car->GetBuzzer().SetBeep(false);
+			}
+			//turn GPO off, record prev ADC reading (normal)
+			else if(car->GetAdc().GetResultF()>1.0f){
+				car->GetGpo().Set(0);
+				gpo = 0;
+				prev_adc = 2.0f;
+				car->GetBuzzer().SetBeep(false);
+			}
+			//turn GPO off, record prev ADC reading (I saw IR!)
+			else if(car->GetAdc().GetResultF()<1.0f){
+				car->GetBuzzer().SetBeep(true);
+				prev_adc = 0.0f;
+				if(!is_startup){
+					sd_setpoint = 1000;
+				}
+			}
+		}
+
+	};
+	looper.Repeat(250,stop,Looper::RepeatMode::kLoose);
 
 	//Update servo error, input to and update servo PID controller
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> servo =
@@ -217,7 +268,13 @@ void RunTestApp::Run()
 			imageProcess.start(image2.get());
 
 			float error = imageProcess.Analyze();
-//			imageProcess.printResult();
+			imageProcess.printResult();
+			if(imageProcess.getState()==BLACK_GUIDE){
+				car->GetBuzzer().SetBeep(true);
+			}
+			else{
+				car->GetBuzzer().SetBeep(false);
+			}
 
 			show_error = error;
 
@@ -251,7 +308,7 @@ RunTestApp &getInstance(void)
 }
 
 //Bluetooth control
-void RunTestApp::PeggyListener(const std::vector<Byte> &bytes)
+bool RunTestApp::PeggyListener(const std::vector<Byte> &bytes)
 {
 
 	switch (bytes[0])
@@ -287,6 +344,8 @@ void RunTestApp::PeggyListener(const std::vector<Byte> &bytes)
 		m_instance->sd_setpoint -= 100.0f;
 		break;
 	}
+
+	return true;
 }
 
 
