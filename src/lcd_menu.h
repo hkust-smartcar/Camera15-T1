@@ -37,6 +37,7 @@ public:
 		return m_select + m_first;
 	}
 	Uint GetSelectedId() const;
+	void edit_label(const Uint id, const char *label_literal);
 
 private:
 	void Redraw();

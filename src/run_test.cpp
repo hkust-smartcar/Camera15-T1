@@ -41,29 +41,29 @@ namespace camera
 
 RunTestApp *m_instance;
 
-RunTestApp::RunTestApp(SystemRes *res)
+RunTestApp::RunTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float ski, float skd)
 : App(res),
 
-  s_kp(0.41f), //0.4, 0.03
-  s_ki(0.0f),
-  s_kd(0.045f),
+  s_kp(skp), //0.4, 0.03
+  s_ki(ski),
+  s_kd(skd),
 
   s_setpoint(0.0f),
 
   //19ms
-  l_kp(0.0125f),
+  l_kp(0.0108f),
   l_ki(0.0f),
-  l_kd(0.0004f),
+  l_kd(0.00055f),
 
-  r_kp(0.0099f),
+  r_kp(0.0104f),
   r_ki(0.0f),
-  r_kd(0.0004f),
+  r_kd(0.00055f),
 
   //19 ms
-  l_m_setpoint(2000.0f), //2900
-  r_m_setpoint(2000.0f),
+  l_m_setpoint(motor_setpoint), //2900
+  r_m_setpoint(motor_setpoint),
 
-  sd_setpoint(2000),
+  sd_setpoint((uint16_t)motor_setpoint),
 
   show_error(0.0),
 
@@ -101,7 +101,17 @@ RunTestApp::RunTestApp(SystemRes *res)
 
 //for grapher use
 	m_peter.addWatchedVar(&sd_setpoint, "sd_setpoint");
-	m_peter.addWatchedVar(&show_error, "error");
+//	m_peter.addWatchedVar(&l_m_setpoint, "Left SP");
+//	m_peter.addWatchedVar(&r_m_setpoint, "Right SP");
+
+//	m_peter.addWatchedVar(&show_error, "error");
+//	m_peter.addWatchedVar(&s_kp,"skp");
+//	m_peter.addWatchedVar(&s_ki,"ski");
+//	m_peter.addWatchedVar(&s_kd,"skd");
+	m_peter.addWatchedVar(&ec0,"left error");
+	m_peter.addWatchedVar(&ec1,"right error");
+//	m_peter.addWatchedVar(&prev_adc, "adc");
+//	m_peter.addWatchedVar(&gpo, "gpo");
 
 // servo
 	m_peter.addSharedVar(&s_kp,"skp");
@@ -127,7 +137,7 @@ void RunTestApp::DetectEmergencyStop(){
 
 	const int count = car->GetEncoderCount(0);
 	const int count2 = car->GetEncoderCount(1);
-	if (!is_startup && (abs(count) + abs(count2) < 60))
+	if (!is_startup && t && (abs(count) + abs(count2) < 60))
 	{
 		if (m_emergency_stop_state.is_triggered)
 		{
@@ -173,10 +183,8 @@ void RunTestApp::Run()
 				{
 					//update and get encoder's count
 					car->UpdateAllEncoders();
-					ec0 =  car->GetEncoderCount(0);
-					ec1 =  car->GetEncoderCount(1);
-
-					speed = ec0/57300.0f/0.019f;
+					ec0 =  l_m_setpoint-car->GetEncoderCount(0);
+					ec1 =  r_m_setpoint-car->GetEncoderCount(1);
 
 					//if t is true, update PID and give power to car, else stop the car
 					if(t && !m_is_stop){
@@ -266,7 +274,8 @@ void RunTestApp::Run()
 			imageProcess.start(image2.get());
 
 			float error = imageProcess.Analyze();
-			imageProcess.printResult();
+//			imageProcess.printResult();
+
 			if(imageProcess.getState()==BLACK_GUIDE){
 				car->GetBuzzer().SetBeep(true);
 			}

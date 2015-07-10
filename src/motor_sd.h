@@ -26,11 +26,11 @@ to specific some kind of parameters like the maximum angle can turn and the toe_
 
 //For all mode, used to calculate something
 #define car_width 14
-#define maxium_turning_angle 42 //the angle is respect to the length of the car
+#define maxium_turning_angle 52 //the angle is respect to the length of the car
 
 
 //Just for Angle_Mode only for precise calculation
-#define toe_in 4   //units in degree(around -8 to 8), minus mean toe out
+#define toe_in 2   //units in degree(around -8 to 8), minus mean toe out
 
 
 /*if maximum turning left angle and turning right angle is not equal then I think the

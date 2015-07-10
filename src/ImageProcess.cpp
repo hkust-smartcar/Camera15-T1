@@ -574,6 +574,7 @@ float ImageProcess::Analyze(void){
 	float error = MIDPOINT_REF - MidpointSumCal(MS,ME)/10;
 
 	if(bg){
+		STATE = BLACK_GUIDE;
 		prev_error = blp.Analyze(bitmap);
 		return blp.Analyze(bitmap);
 	}
@@ -605,10 +606,7 @@ float ImageProcess::Analyze(void){
 	else if (error>2||error<-2)
 	{
 
-		if(bg){
-			STATE = BLACK_GUIDE;
-		}
-		else if(crossroad){
+		if(crossroad){
 			STATE = CROSSROAD;
 		}
 		else{
@@ -681,22 +679,6 @@ void ImageProcess::printResult(){
 		car->GetLcd().SetRegion(libsc::Lcd::Rect(0, 64, St7735r::GetW(), LcdTypewriter::GetFontH()));
 		writer.WriteString(String::Format("%ld,%ld",vip.top_len,vip.bottom_len).c_str());
 
-		car->GetLcd().SetRegion(libsc::Lcd::Rect(0, 80, St7735r::GetW(), LcdTypewriter::GetFontH()));
-		if(right_angle){
-			writer.WriteString("RRR");
-		}
-		else{
-			writer.WriteString("!R!R!R");
-		}
-
-		car->GetLcd().SetRegion(libsc::Lcd::Rect(0, 96, St7735r::GetW(), LcdTypewriter::GetFontH()));
-		if(black_line){
-			writer.WriteString("BLBLBL");
-		}
-		else{
-			writer.WriteString("!BL!BL!BL");
-		}
-
 //		car->GetLcd().SetRegion(Lcd::Rect(0,blp.nearest_blackGuideLine,WIDTH,1));
 //		car->GetLcd().FillColor(St7735r::kGreen);
 
@@ -705,14 +687,6 @@ void ImageProcess::printResult(){
 
 		car->GetLcd().SetRegion(Lcd::Rect(0,vip.lowest_cont_margin,WIDTH,1));
 		car->GetLcd().FillColor(St7735r::kGreen);
-
-
-		car->GetLcd().SetRegion(libsc::Lcd::Rect(0, 112, St7735r::GetW(), LcdTypewriter::GetFontH()));
-		writer.WriteString(String::Format("%d",vip.highest_cont_margin).c_str());
-
-
-		car->GetLcd().SetRegion(libsc::Lcd::Rect(0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()));
-		writer.WriteString(String::Format("%d",vip.lowest_cont_margin).c_str());
 
 		car->GetLcd().SetRegion(Lcd::Rect(0, 80, St7735r::GetW(), LcdTypewriter::GetFontH()));
 		if(right_angle){
@@ -731,11 +705,11 @@ void ImageProcess::printResult(){
 		}
 
 		car->GetLcd().SetRegion(Lcd::Rect(0,112, St7735r::GetW(), LcdTypewriter::GetFontH()));
-		if(black_line){
-			writer.WriteString("BLBLBL");
+		if(bg){
+			writer.WriteString("BGBGBG");
 		}
 		else{
-			writer.WriteString("!BL!BL!BL");
+			writer.WriteString("!BG!BG!BG");
 		}
 
 //

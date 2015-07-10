@@ -28,15 +28,14 @@ namespace camera
 class RunTestApp : public App
 {
 public:
-	explicit RunTestApp(SystemRes *res);
+	explicit RunTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float ski, float skd);
 	void Run() override;
 
 	RunTestApp &getInstance(void);
 
 private:
 
-	bool t = false;
-	float speed = 0;
+	bool t = true;
 
 	//kp, ki, kd and setpoint for servo
 	float s_kp;

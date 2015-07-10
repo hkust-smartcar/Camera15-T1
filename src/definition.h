@@ -24,8 +24,8 @@
 #define WHITEAT 3
 
 //checking midpoint
-#define MS 30	//check start
-#define ME 40   //check end
+#define MS 25	//check start
+#define ME 35   //check end
 
 //for array use
 #define LEFT 0

@@ -60,6 +60,12 @@ Uint LcdMenu::GetSelectedId() const
 	return m_items[m_select].first;
 }
 
+void LcdMenu::edit_label(const Uint id, const char *label_literal)
+{
+	m_items.erase(m_items.begin()+id);
+	m_items.insert(m_items.begin()+id,make_pair(id,label_literal));
+}
+
 void LcdMenu::Redraw()
 {
 	Uint y = m_offset_y;

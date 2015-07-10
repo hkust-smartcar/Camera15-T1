@@ -41,7 +41,7 @@ BatteryMeter::Config GetBatteryMeterConfig()
 {
 	BatteryMeter::Config product;
 	//product.voltage_ratio = 0.39;
-	product.voltage_ratio = 0.3859649f;
+	product.voltage_ratio = 0.3962f;
 	return product;
 }
 
@@ -89,7 +89,7 @@ libsc::Joystick::Config GetJoystickConfig()
 St7735r::Config GetLcdConfig()
 {
 	St7735r::Config product;
-	product.is_revert = true;
+	product.is_revert = false;
 	return product;
 }
 

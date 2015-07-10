@@ -18,12 +18,20 @@ class Launcher : public App
 public:
 	explicit Launcher(SystemRes *res)
 			: App(res)
-	{}
+
+	{
+			data[0] = 2500.0f;
+			data[1] = 0.41f;
+			data[2] = 0.0f;
+			data[3] = 0.045f;
+	}
 
 	void Run();
 
 private:
 	void StartApp(const int id);
+	void setParam(const int id);
+	float data[4];
 };
 
 }

@@ -90,20 +90,20 @@ bool blacklineProcess::detected(){
 	narrow_count=0;
 
 	//nearest 5 rows
-	for(int16_t row=CE-1; row>CE-6; row--){
-		if(margin[row][RIGHT]-margin[row][LEFT] < 6 && margin[row][RIGHT]-margin[row][LEFT] !=0){ // count narrow row
-			narrow_count++;
-			near ++;
-		}
-	}
+//	for(int16_t row=CE-1; row>CE-6; row--){
+//		if(margin[row][RIGHT]-margin[row][LEFT] < 9 && margin[row][RIGHT]-margin[row][LEFT] !=0){ // count narrow row
+//			narrow_count++;
+//			near ++;
+//		}
+//	}
 	//other rows
-	for(int16_t row=CE-6; row>=CS; row--){
-		if(margin[row][RIGHT]-margin[row][LEFT] < 5 && margin[row][RIGHT]-margin[row][LEFT] !=0){ // count narrow row
+	for(int16_t row=CE-1; row>=CS; row--){
+		if(margin[row][RIGHT]-margin[row][LEFT] < 8 && margin[row][RIGHT]-margin[row][LEFT] !=0){ // count narrow row
 			narrow_count++;
 		}
 	}
 
-	if(narrow_count>30 && near>3){ //45){ // if narrow row count > threshold && right in front of car
+	if(narrow_count>20){ // && near>3){ //45){ // if narrow row count > threshold && right in front of car
 		return true;
 	}
 
@@ -118,12 +118,12 @@ bool blacklineProcess::approaching(){
 	int count = 0;
 
 	for(int16_t row=nearest_blackGuideLine; row>CS; row--){
-		if(margin[row][RIGHT]-margin[row][LEFT] < 5 && margin[row][RIGHT]-margin[row][LEFT] !=0){ // count narrow row
+		if(margin[row][RIGHT]-margin[row][LEFT] < 7 && margin[row][RIGHT]-margin[row][LEFT] !=0){ // count narrow row
 			count++;
 		}
 	}
 
-	if(!detected() && nearest_blackGuideLine>CE-25 && count>20){
+	if(!detected() && nearest_blackGuideLine>CE-35 && count>15){
 		return true;
 	}
 	return false;
