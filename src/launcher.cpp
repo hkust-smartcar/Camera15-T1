@@ -336,7 +336,6 @@ void Launcher::setParam(const int id){
 					break;
 
 				default:
-					menu.edit_label(menu.GetSelectedId(),String::Format("%f",data[menu.GetSelectedId()]).c_str());
 					editing = true;
 					break;
 				}

@@ -197,5 +197,12 @@ void VerticalImageProcess::Analyze(bool binary[HEIGHT][WIDTH]){
 	}
 
 }
+bool VerticalImageProcess::detected_black_line(){
+	return (top_len>35 && bottom_len>35 && bottom_len>top_len);
+}
+
+bool VerticalImageProcess::detected_right_angle(){
+	return (top_len>35 && bottom_len>35);
+}
 
 }

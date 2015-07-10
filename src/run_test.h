@@ -35,7 +35,8 @@ public:
 
 private:
 
-	bool t = true;
+	//indicate if motor is running
+	bool motor_run = true;
 
 	//kp, ki, kd and setpoint for servo
 	float s_kp;
@@ -60,15 +61,10 @@ private:
 	uint16_t sd_setpoint;
 
 	//servo_pid
-	int16_t s_degree;
-	int16_t s_result;
 	float show_error;
 
 	//motor_pid
 	int16_t ec0, ec1;
-	int32_t l_result;
-	int32_t r_result;
-	int16_t sp_storage[2];
 
 	//hold right angle
 	Timer::TimerInt RA_time;
@@ -94,15 +90,13 @@ private:
 	libsc::Timer::TimerInt m_start;
 	bool m_is_stop;
 	EmergencyStopState m_emergency_stop_state;
-
-//	void updateSPD(float error);
-	void peggy(libbase::k60::Pit* pit);
 	void DetectEmergencyStop();
 
-	//Grapher
+	//Grapher & bluetooth
 	MyVarManager m_peter;
 	static bool PeggyListener(const std::vector<Byte> &bytes);
 
+	//watch adc and gpo data
 	float prev_adc;
 	float gpo;
 

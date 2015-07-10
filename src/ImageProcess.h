@@ -32,12 +32,13 @@ class ImageProcess{
 public:
 
 	ImageProcess(Car* car_ptr);
-	void start(Byte* image);
-
-	float Analyze(void);
-	float MidpointSumCal(uint16_t start, uint16_t end);
 	~ImageProcess()
-	{}
+		{}
+
+	void start(Byte* image);
+	float Analyze(void);
+
+	float MidpointSumCal(uint16_t start, uint16_t end);
 	void printResult();
 	int getState(){return STATE;}
 
@@ -45,29 +46,22 @@ private:
 
 	Car* car;
 
+	//data
 	bool bitmap[58][78];
 	uint8_t margin[58][2];
 	uint8_t midpoint[58];
 	uint8_t bias_crossroad_margin[58][4];
+	uint8_t data[58][4]; //[0]: number of white pixels; [1]: white row; [2]: black row; [3]: more white at left(0)/right(1)
 
-	uint8_t black_count;
+	//evidence
 	uint8_t white_count;
-	//for amplifying error
-	uint8_t FACTOR;
-
-	//black line & cross road
-
 	uint8_t black_end;
 	uint8_t checkRA;
 	uint8_t white_start;
 	uint8_t white_end;
-	uint8_t black_line_start;
-	uint8_t black_line_end;
-	uint8_t double_check_black_end;
 
-	bool RA_dir;
-
-	uint16_t data[58][4]; //[0]: number of white pixels; [1]: white row; [2]: black row; [3]: more white at left(0)/right(1)
+	//for amplifying error
+	uint8_t FACTOR;
 
 	//indicate situation
 	bool crossroad;
@@ -75,25 +69,20 @@ private:
 	bool r_byebye;
 	bool right_angle;
 	bool black_line;
-	bool bg;
-//	bool continue_right_angle;
+	bool black_guide_line;
 	bool bias_crossroad;
-	bool continue_bias_crossroad;
-	bool first_black_line;
+
+	//for indicate right angle direction
+	bool RA_dir;
 
 	//black guide line
 	blacklineProcess blp;
-	uint16_t almost_white_number;
 
-	//vertical scaning
+	//vertical scanning
 	VerticalImageProcess vip;
 
 	//State
 	uint8_t STATE;
-	float prev_error;
-
-	//distortion
-	//	distortion dis;
 
 	//median filter
 	Imp medianFilter;

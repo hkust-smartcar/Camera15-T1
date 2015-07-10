@@ -6,7 +6,7 @@
 #define RS 0	//row start
 #define RE 78	//row end
 
-//status
+//state
 #define INIT_STATE 	 0
 #define STRAIGHT 	 1
 #define CROSSROAD 	 2

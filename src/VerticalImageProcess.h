@@ -32,8 +32,16 @@ public:
 	{}
 	void Analyze(bool binary[HEIGHT][WIDTH]);
 
+	bool detected_black_line();
+	bool detected_right_angle();
 
-//private:
+	uint8_t get_check_row(){return libutil::Clamp(CS,highest_cont_margin-5,CE);}
+	uint8_t get_highest_cont_margin(){return highest_cont_margin;}
+	uint8_t get_lowest_cont_margin(){return lowest_cont_margin;}
+	uint8_t get_top_len(){return top_len;}
+	uint8_t get_bottom_len(){return bottom_len;}
+
+private:
 	uint8_t margin[WIDTH][2];
 
 	uint8_t cont_top_margin[WIDTH][3];

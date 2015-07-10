@@ -29,11 +29,16 @@ public:
 	float Analyze(bool binary[HEIGHT][WIDTH]);
 	bool detected();
 	bool approaching();
+	uint8_t get_nearest_blackGuideLine(){return nearest_blackGuideLine;}
+	uint8_t get_margin(int i, int j){return margin[i][j];}
+	uint8_t get_midpoint(int i){return midpoint[i];}
+	uint8_t get_narrow_count(){return narrow_count;}
 
-	uint16_t midpoint[HEIGHT];
-	uint16_t margin[HEIGHT][2];
-	uint16_t narrow_count=0;
-	uint16_t nearest_blackGuideLine = 0;
+private:
+	uint8_t midpoint[HEIGHT];
+	uint8_t margin[HEIGHT][2];
+	uint8_t narrow_count=0;
+	uint8_t nearest_blackGuideLine = 0;
 
 };
 }

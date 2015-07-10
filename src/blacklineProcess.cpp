@@ -86,24 +86,15 @@ bool blacklineProcess::detected(){
 	//evidence 1: number of rows with narrow width > threshold
 	//evidence 2: black line start near car
 
-	int near = 0;
 	narrow_count=0;
 
-	//nearest 5 rows
-//	for(int16_t row=CE-1; row>CE-6; row--){
-//		if(margin[row][RIGHT]-margin[row][LEFT] < 9 && margin[row][RIGHT]-margin[row][LEFT] !=0){ // count narrow row
-//			narrow_count++;
-//			near ++;
-//		}
-//	}
-	//other rows
 	for(int16_t row=CE-1; row>=CS; row--){
 		if(margin[row][RIGHT]-margin[row][LEFT] < 8 && margin[row][RIGHT]-margin[row][LEFT] !=0){ // count narrow row
 			narrow_count++;
 		}
 	}
 
-	if(narrow_count>20){ // && near>3){ //45){ // if narrow row count > threshold && right in front of car
+	if(narrow_count>20){ // if narrow row count > threshold
 		return true;
 	}
 
