@@ -1,5 +1,5 @@
 /*
- * run_test_app.cpp
+ * scstudio_test_app.cpp
  *
  * Author: Ben Lai, Ming Tsang, Peggy Lau
  * Copyright (c) 2014-2015 HKUST SmartCar Team
@@ -24,7 +24,7 @@
 
 #include "car.h"
 #include "system_res.h"
-#include "run_test.h"
+#include "scstudio_test_app.h"
 #include "ImageProcess.h"
 
 
@@ -39,9 +39,7 @@ using namespace std;
 namespace camera
 {
 
-RunTestApp *m_instance;
-
-RunTestApp::RunTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float ski, float skd)
+SCStudioTestApp::SCStudioTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float ski, float skd)
 : App(res),
 
   s_kp(skp),
@@ -65,8 +63,6 @@ RunTestApp::RunTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float
 
   sd_setpoint((uint16_t)motor_setpoint),
 
-  show_error(0.0),
-
   RA_time(System::Time()),
 
   servo_Control(&s_setpoint, &s_kp, &s_ki, &s_kd, -1000, 1000),
@@ -78,8 +74,6 @@ RunTestApp::RunTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float
   m_start(0),
   m_is_stop(false),
 
-  m_peter(),
-
   prev_adc(0),
   gpo(0)
 
@@ -88,28 +82,15 @@ RunTestApp::RunTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float
 	ec0 = 0;
 	ec1 = 0;
 
-	l_result=0;
-	r_result=0;
-
-	m_instance = this;
-
-	//for grapher use
-	m_peter.addWatchedVar(&sd_setpoint, "sd_setpoint");
-	m_peter.addWatchedVar(&ec0,"left error");
-	m_peter.addWatchedVar(&ec1,"right error");
-	m_peter.addWatchedVar(&l_result,"left pwm");
-	m_peter.addWatchedVar(&r_result,"right pwm");
-
-	m_peter.addSharedVar(&s_kp,"skp");
-//	m_peter.addSharedVar(&s_ki,"ski");
-	m_peter.addSharedVar(&s_kd,"skd");
-
-	m_peter.Init(&PeggyListener);
 	prev_adc = GetSystemRes()->car->GetAdc().GetResultF();
+
+#ifdef CAR_WITH_BT
+	scstudio.SetUart(&(GetSystemRes()->car->GetUart()));
+#endif
 
 }
 
-void RunTestApp::DetectEmergencyStop(){
+void SCStudioTestApp::DetectEmergencyStop(){
 
 	//Get car
 	Car *car = GetSystemRes()->car;
@@ -146,7 +127,7 @@ void RunTestApp::DetectEmergencyStop(){
 
 }
 
-void RunTestApp::Run()
+void SCStudioTestApp::Run()
 {
 
 	/************************INITIALIZATION***********************/
@@ -167,41 +148,8 @@ void RunTestApp::Run()
 	/************************LOOPER***********************/
 	Looper looper;
 
-	/*Update encoder count, input to and update speed PID controller*/
-//	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> encoder =
-//			[&](const Timer::TimerInt, const Timer::TimerInt)
-//	{
-//
-//		//update and get encoder's count
-//		car->UpdateAllEncoders();
-//		ec0 =  l_m_setpoint-car->GetEncoderCount(0);
-//		ec1 =  r_m_setpoint-car->GetEncoderCount(1);
-//
-//		//if motor_run is true, update PID and give power to car, else stop the car
-//		if(motor_run && !m_is_stop){
-//
-//			l_result = (int32_t)l_speedControl.updatePID((float)car->GetEncoderCount(0));
-//			car->SetMotorPower(0,l_result);
-//
-//			r_result = (int32_t)r_speedControl.updatePID((float)car->GetEncoderCount(1));
-//			car->SetMotorPower(1,r_result);
-//
-//			DetectEmergencyStop();
-//		}
-//		else {
-//			car->SetMotorPower(0,0);
-//			car->SetMotorPower(1,0);
-//		}
-//
-//	};
-//	looper.Repeat(19, encoder, Looper::RepeatMode::kLoose);
-
-
 	/*breathing led- indicate if program hang or not*/
 	looper.Repeat(199, std::bind(&libsc::Led::Switch, &car->GetLed(0)), Looper::RepeatMode::kLoose);
-
-	/*Send data to grapher*/
-	looper.Repeat(31, std::bind(&MyVarManager::sendWatchData, &m_peter), Looper::RepeatMode::kLoose);
 
 	/*Stop car by checking IR constantly*/
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> stop =
@@ -223,7 +171,6 @@ void RunTestApp::Run()
 			gpo = 1;
 			prev_adc = 2.0f;
 			car->GetBuzzer().SetBeep(false);
-			//prev_adc = car->GetAdc().GetResultF();
 		}
 		//if GPO is on
 		else{
@@ -255,7 +202,7 @@ void RunTestApp::Run()
 	/*Update servo error, input to and update servo PID controller*/
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> servo =
 			[&](const Timer::TimerInt, const Timer::TimerInt)
-			{
+	{
 
 		if (car->GetCamera().IsAvailable())
 		{
@@ -286,22 +233,73 @@ void RunTestApp::Run()
 
 		//if motor_run is true, update PID and give power to car, else stop the car
 		if(motor_run && !m_is_stop){
+			car->SetMotorPower(0,(int32_t)l_speedControl.updatePID((float)car->GetEncoderCount(0)));
 
-			l_result = (int32_t)l_speedControl.updatePID((float)car->GetEncoderCount(0));
-			car->SetMotorPower(0,l_result);
+			car->SetMotorPower(1,(int32_t)r_speedControl.updatePID((float)car->GetEncoderCount(1)));
 
-			r_result = (int32_t)r_speedControl.updatePID((float)car->GetEncoderCount(1));
-			car->SetMotorPower(1,r_result);
-
-//			DetectEmergencyStop();
+			DetectEmergencyStop();
 		}
 		else {
 			car->SetMotorPower(0,0);
 			car->SetMotorPower(1,0);
 		}
-			};
+
+	};
 	looper.Repeat(11, servo, Looper::RepeatMode::kPrecise);
 
+#ifdef CAR_WITH_BT
+
+	//Send camera
+	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> sendCam =
+			[&](const Timer::TimerInt, const Timer::TimerInt)
+	{
+		scstudio.SendCamera(image2.get(),image_size);
+	};
+	looper.Repeat(50, sendCam, Looper::RepeatMode::kPrecise);
+
+	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> bt =
+			[&](const Timer::TimerInt, const Timer::TimerInt)
+	{
+		char received;
+		if(car->GetUart().PeekChar(&received)){
+			switch(received){
+			//move & stop
+			case 'f':
+				//reset pid
+				l_speedControl.reset();
+				r_speedControl.reset();
+				servo_Control.reset();
+
+				if(motor_run)
+					motor_run = false;
+				else{
+
+					m_start = System::Time();
+					m_is_stop = false;
+					motor_run = true;
+				}
+				break;
+
+				//faster!
+			case 'r':
+				l_m_setpoint += 100.0f;
+				r_m_setpoint += 100.0f;
+				sd_setpoint += 100.0f;
+				break;
+
+				//slower!
+			case 'R':
+				l_m_setpoint -= 100.0f;
+				r_m_setpoint -= 100.0f;
+				sd_setpoint -= 100.0f;
+				break;
+			}
+		}
+
+	};
+	looper.Repeat(31, bt, Looper::RepeatMode::kPrecise);
+
+#endif
 
 	/*Get image*/
 	car->GetCamera().Start();
@@ -312,53 +310,7 @@ void RunTestApp::Run()
 	}
 	car->GetCamera().Stop();
 
+
 }
-
-RunTestApp &getInstance(void)
-{
-	return *m_instance;
-}
-
-//Bluetooth control
-bool RunTestApp::PeggyListener(const std::vector<Byte> &bytes)
-{
-
-	switch (bytes[0])
-	{
-	//move & stop
-	case 'f':
-		//reset pid
-		m_instance->l_speedControl.reset();
-		m_instance->r_speedControl.reset();
-		m_instance->servo_Control.reset();
-
-		if(m_instance->motor_run)
-			m_instance->motor_run = false;
-		else{
-
-			m_instance->m_start = System::Time();
-			m_instance->m_is_stop = false;
-			m_instance->motor_run = true;
-		}
-		break;
-
-	//faster!
-	case 'r':
-		m_instance->l_m_setpoint += 100.0f;
-		m_instance->r_m_setpoint += 100.0f;
-		m_instance->sd_setpoint += 100.0f;
-		break;
-
-	//slower!
-	case 'R':
-		m_instance->l_m_setpoint -= 100.0f;
-		m_instance->r_m_setpoint -= 100.0f;
-		m_instance->sd_setpoint -= 100.0f;
-		break;
-	}
-
-	return true;
-}
-
 
 }

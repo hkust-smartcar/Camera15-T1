@@ -25,6 +25,7 @@
 using namespace libsc::k60;
 using namespace libsc;
 using namespace libutil;
+using namespace libbase::k60;
 
 
 #define SERVO_ERR 1350
@@ -100,13 +101,6 @@ libsc::Led::Config GetLedConfig(const uint8_t id)
 	return product;
 }
 
-//DirMotor::Config GetMotorConfig(const uint8_t id)
-//{
-//	DirMotor::Config product;
-//	product.id = id;
-//	return product;
-//}
-
 AlternateMotor::Config GetMotorConfig(const uint8_t id)
 {
 	AlternateMotor::Config product;
@@ -166,12 +160,13 @@ Car::Car()
 		  m_lcd(GetLcdConfig()),
 		  m_leds{libsc::Led(GetLedConfig(0)), libsc::Led(GetLedConfig(1)), libsc::Led(GetLedConfig(2)),
 					libsc::Led(GetLedConfig(3))},
-//		  m_motors{DirMotor(GetMotorConfig(0)), DirMotor(GetMotorConfig(1))},
 		  m_motors{AlternateMotor(GetMotorConfig(0)),AlternateMotor(GetMotorConfig(1))},
-		  m_servo(GetServoConfig())
-//		  ,m_uart(GetUartConfig())
-		  ,m_buzzer(GetBuzzerConfig()),
-		  m_gpo(GetGpoConfig()),
+		  m_servo(GetServoConfig()),
+		  m_buzzer(GetBuzzerConfig())
+#ifdef CAR_WITH_BT
+		  ,m_uart(GetUartConfig())
+#endif
+		  ,m_gpo(GetGpoConfig()),
 		  m_adc(GetAdcConfig())
 
 {
@@ -208,7 +203,6 @@ void Car::SetTurning(const int16_t percentage)
 	const int percentage_ = libutil::Clamp<int>(-10000, percentage, 10000);
 	const int degree = SERVO_MID_DEGREE + (percentage_ * SERVO_AMPLITUDE / 1000);
 	m_servo.SetDegree(libutil::Clamp<int>(-13500, degree, 13500));
-	//m_servo.SetDegree(percentage);
 }
 
 void Car::SetButtonIsr(const uint8_t id, const Button::Config *config)

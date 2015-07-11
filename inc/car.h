@@ -6,6 +6,7 @@
  * Refer to LICENSE for details
  */
 
+
 #pragma once
 
 #include <cstdint>
@@ -25,10 +26,11 @@
 #include <libbase/k60/gpio.h>
 #include <libbase/k60/adc.h>
 
-#include "MyVarManager.h"
+#include "definition.h"
 
 namespace camera
 {
+
 
 class Car
 {
@@ -103,11 +105,6 @@ public:
 		return m_leds[id];
 	}
 
-//	libsc::DirMotor& GetMotor(const uint8_t id)
-//	{
-//		return m_motors[id];
-//	}
-
 	libsc::AlternateMotor& GetMotor(const uint8_t id)
 	{
 		return m_motors[id];
@@ -119,22 +116,17 @@ public:
 		return m_servo;
 	}
 
-
-//	libsc::k60::JyMcuBt106& GetUart()
-//	{
-//		return m_uart;
-//	}
+#ifdef CAR_WITH_BT
+	libsc::k60::JyMcuBt106& GetUart()
+	{
+		return m_uart;
+	}
+#endif
 
 	libsc::SimpleBuzzer& GetBuzzer()
 	{
 		return m_buzzer;
 	}
-
-//	libsc::k60::JyMcuBt106& GetUart()
-//	{
-//		return m_uart;
-//	}
-
 
 	libbase::k60::Gpo& GetGpo()
 	{
@@ -173,13 +165,11 @@ public:
 	static constexpr int GetCameraW()
 	{
 		return 80;
-//		return 78;
 	}
 
 	static constexpr int GetCameraH()
 	{
 		return 60;
-//		return 58;
 	}
 
 private:
@@ -190,13 +180,15 @@ private:
 	libsc::Joystick m_joystick;
 	libsc::St7735r m_lcd;
 	libsc::Led m_leds[4];
-//	libsc::DirMotor m_motors[2];
 	libsc::AlternateMotor m_motors[2];
 	libsc::FutabaS3010 m_servo;
 	libsc::SimpleBuzzer m_buzzer;
-//	libsc::k60::JyMcuBt106 m_uart;
+#ifdef CAR_WITH_BT
+	libsc::k60::JyMcuBt106 m_uart;
+#endif
 	libbase::k60::Gpo m_gpo;
 	libbase::k60::Adc m_adc;
 };
+
 
 }

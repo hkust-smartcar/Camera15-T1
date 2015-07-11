@@ -83,9 +83,9 @@ void Launcher::Run()
 {
 	Car *car = GetSystemRes()->car;
 
-	car->GetServo().SetDegree(SERVO_MID_DEGREE-3000);
+	car->GetServo().SetDegree(SERVO_MID_DEGREE-4000);
 	System::DelayMs(400);
-	car->GetServo().SetDegree(SERVO_MID_DEGREE+3000);
+	car->GetServo().SetDegree(SERVO_MID_DEGREE+4000);
 	System::DelayMs(400);
 	car->GetServo().SetDegree(SERVO_MID_DEGREE);
 

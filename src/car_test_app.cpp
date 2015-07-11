@@ -63,7 +63,7 @@ void CarTestApp::Run()
 	writer.WriteString("Encoder:");
 
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> encoder =
-				[&](const Timer::TimerInt request, const Timer::TimerInt)
+				[&](const Timer::TimerInt, const Timer::TimerInt)
 			{
 				car->UpdateAllEncoders();
 				ec+=car->GetEncoderCount(1);

@@ -1,5 +1,5 @@
 /*
- * run_test_app.h
+ * scstudio_test_app.h
  *
  * Author: Ben Lai, Ming Tsang, Peggy Lau
  * Copyright (c) 2014-2015 HKUST SmartCar Team
@@ -8,12 +8,13 @@
 
 #pragma once
 
-#include "app.h"
-#include "car.h"
-#include "ImageProcess.h"
-#include "MyVarManager.h"
 #include <libsc/lcd_typewriter.h>
 #include <libutil/positional_pid_controller.h>
+#include <libutil/sc_studio.h>
+
+#include "app.h"
+#include "ImageProcess.h"
+#include "MyVarManager.h"
 #include "pid_controller.h"
 #include "motor_sd.h"
 #include "definition.h"
@@ -25,13 +26,11 @@ using namespace libsc::k60;
 namespace camera
 {
 
-class RunTestApp : public App
+class SCStudioTestApp : public App
 {
 public:
-	explicit RunTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float ski, float skd);
+	explicit SCStudioTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float ski, float skd);
 	void Run() override;
-
-	RunTestApp &getInstance(void);
 
 private:
 
@@ -92,9 +91,7 @@ private:
 	EmergencyStopState m_emergency_stop_state;
 	void DetectEmergencyStop();
 
-	//Grapher & bluetooth
-	MyVarManager m_peter;
-	static bool PeggyListener(const std::vector<Byte> &bytes);
+	ScStudio scstudio;
 
 	//watch adc and gpo data
 	float prev_adc;
