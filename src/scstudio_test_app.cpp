@@ -104,11 +104,12 @@ void SCStudioTestApp::DetectEmergencyStop(){
 
 	const int count = car->GetEncoderCount(0);
 	const int count2 = car->GetEncoderCount(1);
-	if (!is_startup && motor_run && (abs(count) + abs(count2) < 60))
+
+	if (!is_startup && motor_run && (abs(count) < 30 || abs(count2) < 30))
 	{
 		if (m_emergency_stop_state.is_triggered)
 		{
-			if (Timer::TimeDiff(time, m_emergency_stop_state.trigger_time) > 150)
+			if (Timer::TimeDiff(time, m_emergency_stop_state.trigger_time) > 20)
 			{
 				// Emergency stop
 				m_is_stop = true;
@@ -191,7 +192,7 @@ void SCStudioTestApp::Run()
 				car->GetBuzzer().SetBeep(true);
 				prev_adc = 0.0f;
 				if(!is_startup){
-					sd_setpoint = 1000;
+					sd_setpoint = 700;
 				}
 			}
 		}
@@ -282,16 +283,16 @@ void SCStudioTestApp::Run()
 
 				//faster!
 			case 'r':
-				l_m_setpoint += 100.0f;
-				r_m_setpoint += 100.0f;
-				sd_setpoint += 100.0f;
+				l_m_setpoint += 25.0f;
+				r_m_setpoint += 25.0f;
+				sd_setpoint += 25.0f;
 				break;
 
 				//slower!
 			case 'R':
-				l_m_setpoint -= 100.0f;
-				r_m_setpoint -= 100.0f;
-				sd_setpoint -= 100.0f;
+				l_m_setpoint -= 25.0f;
+				r_m_setpoint -= 25.0f;
+				sd_setpoint -= 25.0f;
 				break;
 			}
 		}

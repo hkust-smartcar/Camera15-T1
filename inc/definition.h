@@ -46,4 +46,5 @@
 #define SERVO_MID_DEGREE 8950  //9500
 #define SERVO_AMPLITUDE  5000 //3700
 
-//#define CAR_WITH_BT
+#define CAR_WITH_BT
+//#define PGRAPHER

@@ -43,12 +43,6 @@ void CarTestApp::Run()
 	const Uint image_size = car->GetCameraW() * car->GetCameraH() / 8;
 	unique_ptr<Byte[]> image2(new Byte[image_size]);
 
-	JyMcuBt106::Config bt_conf;
-	bt_conf.id = 0;
-	bt_conf.baud_rate = libbase::k60::Uart::Config::BaudRate::k115200;
-	JyMcuBt106 bt(bt_conf);
-
-
 	Looper looper;
 	int ec=0;
 
@@ -61,18 +55,27 @@ void CarTestApp::Run()
 
 	car->GetLcd().SetRegion({0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()});
 	writer.WriteString("Encoder:");
+//
+//	car->SetMotorPower(0,1000);
+//	car->SetMotorPower(1,1000);
 
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> encoder =
 				[&](const Timer::TimerInt, const Timer::TimerInt)
 			{
 				car->UpdateAllEncoders();
 				ec+=car->GetEncoderCount(1);
+#ifdef CAR_WITH_BT
+				char buffer[100];
+				sprintf(buffer,"%ld    %ld\n",car->GetEncoderCount(0),car->GetEncoderCount(1));
+				car->GetUart().SendStr(buffer);
+#else
 				car->GetLcd().SetRegion({0, 144, St7735r::GetW(),
 						LcdTypewriter::GetFontH()});
 				writer.WriteString(String::Format("%ld, %ld\n",
 						car->GetEncoderCount(0), ec).c_str());
+#endif
 			};
-	looper.Repeat(19, encoder, Looper::RepeatMode::kPrecise);
+	looper.Repeat(11, encoder, Looper::RepeatMode::kPrecise);
 
 	car->GetCamera().Start();
 	looper.ResetTiming();
@@ -82,15 +85,13 @@ void CarTestApp::Run()
 		{
 			memcpy(image2.get(), car->GetCamera().LockBuffer(), image_size);
 			car->GetCamera().UnlockBuffer();
-//
+
 			car->GetLcd().SetRegion({0, 0, car->GetCameraW(), car->GetCameraH()});
 			car->GetLcd().FillBits(0, 0xFFFF, image2.get(),
 					car->GetCameraW() * car->GetCameraH());
 
 			mf.medianFilterPrint(image2.get(), &car->GetLcd());
 
-//			car->SetMotorPower(0,200);
-//			car->SetMotorPower(1,200);
 		}
 
 		looper.Once();

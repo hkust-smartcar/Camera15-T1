@@ -78,8 +78,6 @@ RunTestApp::RunTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float
   m_start(0),
   m_is_stop(false),
 
-  m_peter(),
-
   prev_adc(0),
   gpo(0)
 
@@ -92,6 +90,8 @@ RunTestApp::RunTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float
 	r_result=0;
 
 	m_instance = this;
+
+#ifdef PGRAPHER
 
 	//for grapher use
 	m_peter.addWatchedVar(&sd_setpoint, "sd_setpoint");
@@ -107,6 +107,8 @@ RunTestApp::RunTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float
 	m_peter.Init(&PeggyListener);
 	prev_adc = GetSystemRes()->car->GetAdc().GetResultF();
 
+#endif
+
 }
 
 void RunTestApp::DetectEmergencyStop(){
@@ -116,18 +118,19 @@ void RunTestApp::DetectEmergencyStop(){
 
 	static bool is_startup = true;
 	const Timer::TimerInt time = System::Time();
-	if (is_startup && Timer::TimeDiff(time, m_start) > 2000)
+	if (is_startup && Timer::TimeDiff(time, m_start) > 3000)
 	{
 		is_startup = false;
 	}
 
 	const int count = car->GetEncoderCount(0);
 	const int count2 = car->GetEncoderCount(1);
-	if (!is_startup && motor_run && (abs(count) + abs(count2) < 60))
+
+	if (!is_startup && motor_run && (abs(count) < 30 || abs(count2) < 30))
 	{
 		if (m_emergency_stop_state.is_triggered)
 		{
-			if (Timer::TimeDiff(time, m_emergency_stop_state.trigger_time) > 150)
+			if (Timer::TimeDiff(time, m_emergency_stop_state.trigger_time) > 20)
 			{
 				// Emergency stop
 				m_is_stop = true;
@@ -167,41 +170,80 @@ void RunTestApp::Run()
 	/************************LOOPER***********************/
 	Looper looper;
 
-	/*Update encoder count, input to and update speed PID controller*/
-//	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> encoder =
-//			[&](const Timer::TimerInt, const Timer::TimerInt)
-//	{
-//
-//		//update and get encoder's count
-//		car->UpdateAllEncoders();
-//		ec0 =  l_m_setpoint-car->GetEncoderCount(0);
-//		ec1 =  r_m_setpoint-car->GetEncoderCount(1);
-//
-//		//if motor_run is true, update PID and give power to car, else stop the car
-//		if(motor_run && !m_is_stop){
-//
-//			l_result = (int32_t)l_speedControl.updatePID((float)car->GetEncoderCount(0));
-//			car->SetMotorPower(0,l_result);
-//
-//			r_result = (int32_t)r_speedControl.updatePID((float)car->GetEncoderCount(1));
-//			car->SetMotorPower(1,r_result);
-//
-//			DetectEmergencyStop();
-//		}
-//		else {
-//			car->SetMotorPower(0,0);
-//			car->SetMotorPower(1,0);
-//		}
-//
-//	};
-//	looper.Repeat(19, encoder, Looper::RepeatMode::kLoose);
-
-
 	/*breathing led- indicate if program hang or not*/
 	looper.Repeat(199, std::bind(&libsc::Led::Switch, &car->GetLed(0)), Looper::RepeatMode::kLoose);
 
+#ifdef PGRAPHER
 	/*Send data to grapher*/
 	looper.Repeat(31, std::bind(&MyVarManager::sendWatchData, &m_peter), Looper::RepeatMode::kLoose);
+
+#endif
+
+#ifdef CAR_WITH_BT
+	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> bt =
+			[&](const Timer::TimerInt, const Timer::TimerInt)
+	{
+		char received;
+		if(car->GetUart().PeekChar(&received)){
+			switch(received){
+
+			//move & stop
+			case 'f':
+				//reset pid
+				l_speedControl.reset();
+				r_speedControl.reset();
+				servo_Control.reset();
+
+				if(motor_run)
+					motor_run = false;
+				else{
+					m_start = System::Time();
+					m_is_stop = false;
+					motor_run = true;
+				}
+				break;
+
+			//faster!
+			case 'r':
+				l_m_setpoint += 100.0f;
+				r_m_setpoint += 100.0f;
+				sd_setpoint += 100.0f;
+				break;
+
+			//slower!
+			case 'R':
+				l_m_setpoint -= 100.0f;
+				r_m_setpoint -= 100.0f;
+				sd_setpoint -= 100.0f;
+				break;
+
+			//servo kp
+			case 'p':
+				s_kp += 0.005f;
+				break;
+
+			case 'P':
+				s_kp -= 0.005f;
+				break;
+
+			//servo kd
+			case 'd':
+				s_kd += 0.0005f;
+				break;
+
+			case 'D':
+				s_kd -= 0.0005f;
+				break;
+
+			}
+		}
+
+		char buffer[100];
+		sprintf(buffer,"%f    %f    %d    %ld    %ld    %ld    %ld\n", s_kp,s_kd, sd_setpoint, l_result, r_result,ec0,ec1);
+		car->GetUart().SendStr(buffer);
+	};
+	looper.Repeat(31, bt, Looper::RepeatMode::kPrecise);
+#endif
 
 	/*Stop car by checking IR constantly*/
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> stop =
@@ -222,7 +264,7 @@ void RunTestApp::Run()
 			car->GetGpo().Set(1);
 			gpo = 1;
 			prev_adc = 2.0f;
-			car->GetBuzzer().SetBeep(false);
+//			car->GetBuzzer().SetBeep(false);
 			//prev_adc = car->GetAdc().GetResultF();
 		}
 		//if GPO is on
@@ -230,21 +272,21 @@ void RunTestApp::Run()
 			//if ADC from 0 to 2, stop!
 			if(!is_startup && (car->GetAdc().GetResultF()-prev_adc)>1.0f){
 				motor_run = false;
-				car->GetBuzzer().SetBeep(false);
+//				car->GetBuzzer().SetBeep(false);
 			}
 			//turn GPO off, record prev ADC reading (normal)
 			else if(car->GetAdc().GetResultF()>1.0f){
 				car->GetGpo().Set(0);
 				gpo = 0;
 				prev_adc = 2.0f;
-				car->GetBuzzer().SetBeep(false);
+//				car->GetBuzzer().SetBeep(false);
 			}
 			//turn GPO off, record prev ADC reading (I saw IR!)
 			else if(car->GetAdc().GetResultF()<1.0f){
-				car->GetBuzzer().SetBeep(true);
+//				car->GetBuzzer().SetBeep(true);
 				prev_adc = 0.0f;
 				if(!is_startup){
-					sd_setpoint = 1000;
+					sd_setpoint = 700;
 				}
 			}
 		}
@@ -281,8 +323,8 @@ void RunTestApp::Run()
 
 		//update and get encoder's count
 		car->UpdateAllEncoders();
-		ec0 =  l_m_setpoint-car->GetEncoderCount(0);
-		ec1 =  r_m_setpoint-car->GetEncoderCount(1);
+		ec0 =  car->GetEncoderCount(0);
+		ec1 =  car->GetEncoderCount(1);
 
 		//if motor_run is true, update PID and give power to car, else stop the car
 		if(motor_run && !m_is_stop){
@@ -293,7 +335,7 @@ void RunTestApp::Run()
 			r_result = (int32_t)r_speedControl.updatePID((float)car->GetEncoderCount(1));
 			car->SetMotorPower(1,r_result);
 
-//			DetectEmergencyStop();
+			DetectEmergencyStop();
 		}
 		else {
 			car->SetMotorPower(0,0);
@@ -318,6 +360,8 @@ RunTestApp &getInstance(void)
 {
 	return *m_instance;
 }
+
+#ifdef PGRAPHER
 
 //Bluetooth control
 bool RunTestApp::PeggyListener(const std::vector<Byte> &bytes)
@@ -344,21 +388,21 @@ bool RunTestApp::PeggyListener(const std::vector<Byte> &bytes)
 
 	//faster!
 	case 'r':
-		m_instance->l_m_setpoint += 100.0f;
-		m_instance->r_m_setpoint += 100.0f;
-		m_instance->sd_setpoint += 100.0f;
+		m_instance->l_m_setpoint += 25.0f;
+		m_instance->r_m_setpoint += 25.0f;
+		m_instance->sd_setpoint += 25.0f;
 		break;
 
 	//slower!
 	case 'R':
-		m_instance->l_m_setpoint -= 100.0f;
-		m_instance->r_m_setpoint -= 100.0f;
-		m_instance->sd_setpoint -= 100.0f;
+		m_instance->l_m_setpoint -= 25.0f;
+		m_instance->r_m_setpoint -= 25.0f;
+		m_instance->sd_setpoint -= 25.0f;
 		break;
 	}
 
 	return true;
 }
-
+#endif
 
 }

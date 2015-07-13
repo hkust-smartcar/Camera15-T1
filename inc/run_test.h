@@ -94,9 +94,11 @@ private:
 	EmergencyStopState m_emergency_stop_state;
 	void DetectEmergencyStop();
 
+#ifdef PGRAPHER
 	//Grapher & bluetooth
 	MyVarManager m_peter;
 	static bool PeggyListener(const std::vector<Byte> &bytes);
+#endif
 
 	//watch adc and gpo data
 	float prev_adc;

@@ -21,6 +21,7 @@
 #include "car.h"
 #include "car_test_app.h"
 #include "run_test.h"
+#include "scstudio_test_app.h"
 
 #include "launcher.h"
 #include "lcd_menu.h"
@@ -33,6 +34,7 @@ using namespace libutil;
 #define NORMAL_ID 0
 #define CAR_TEST_ID 1
 #define RUN_TEST_ID 2
+#define COMPETE_ID 3
 
 #define SETPOINT 0
 #define SERVO_KP 1
@@ -125,6 +127,7 @@ void Launcher::Run()
 			//menu.AddItem(NORMAL_ID, "Normal");
 			menu.AddItem(CAR_TEST_ID, "Car Test");
 			menu.AddItem(RUN_TEST_ID, "Run Test");
+			menu.AddItem(COMPETE_ID, "Compete");
 			menu.Select(0);
 
 			int position_offset = 0;
@@ -239,7 +242,7 @@ void Launcher::setParam(const int id){
 				{
 
 				case SETPOINT:
-					data[0] -= 100;
+					data[0] -= 25;
 					break;
 
 				case SERVO_KP:
@@ -271,7 +274,7 @@ void Launcher::setParam(const int id){
 				{
 
 				case SETPOINT:
-					data[0] += 100;
+					data[0] += 25;
 					break;
 
 				case SERVO_KP:
@@ -389,6 +392,7 @@ void Launcher::StartApp(const int id)
 		app.Run();
 	}
 	break;
+
 	case RUN_TEST_ID:
 	{
 
@@ -412,6 +416,30 @@ void Launcher::StartApp(const int id)
 		app.Run();
 	}
 	break;
+
+	case COMPETE_ID:
+	{
+		SCStudioTestApp app(GetSystemRes(),data[0],data[1],data[2],data[3]);
+
+		float adc_result = car->GetAdc().GetResultF();
+
+		while (adc_result<0.5f)
+		{
+			if(car->GetBuzzer().GetBeep()){
+				car->GetBuzzer().SetBeep(false);
+			}
+			else{
+				car->GetBuzzer().SetBeep(true);
+			}
+			adc_result = car->GetAdc().GetResultF();
+			car->GetLcd().SetRegion(Lcd::Rect(0,0,St7735r::GetW(),LcdTypewriter::GetFontH()));
+			writer.WriteString(String::Format("Ready...%f",adc_result).c_str());
+			System::DelayMs(20);
+		}
+		app.Run();
+	}
+	break;
+
 	}
 }
 

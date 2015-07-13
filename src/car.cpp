@@ -115,19 +115,22 @@ FutabaS3010::Config GetServoConfig()
 	return product;
 }
 
+#ifdef CAR_WITH_BT
 JyMcuBt106::Config GetUartConfig()
 {
 	JyMcuBt106::Config product;
 	product.id = 0;
 	product.baud_rate = libbase::k60::Uart::Config::BaudRate::k115200;
-	//product.tx_dma_channel = 0;
+	product.tx_dma_channel = 0;
 	return product;
 }
+#endif
 
 SimpleBuzzer::Config GetBuzzerConfig()
 {
 	SimpleBuzzer::Config product;
 	product.id = 0;
+	product.is_active_low = 0;
 	return product;
 }
 

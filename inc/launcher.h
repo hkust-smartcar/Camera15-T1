@@ -20,8 +20,8 @@ public:
 			: App(res)
 
 	{
-			data[0] = 1200.0f;
-			data[1] = 0.42f;
+			data[0] = 1275.0f;
+			data[1] = 0.43f;
 			data[2] = 0.0f;
 			data[3] = 0.045f;
 	}
@@ -35,3 +35,17 @@ private:
 };
 
 }
+
+/*
+ 	 	 	around 2m/s:
+  			data[0] = 1200.0f;
+			data[1] = 0.42f;
+			data[2] = 0.0f;
+			data[3] = 0.045f;
+
+			faster?
+  			data[0] = 1325.0f;
+			data[1] = 0.455f;
+			data[2] = 0.0f;
+			data[3] = 0.046f;
+*/
