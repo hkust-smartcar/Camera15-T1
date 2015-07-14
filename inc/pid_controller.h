@@ -19,7 +19,7 @@ class PIDhandler
 {
 public:
 
-	explicit PIDhandler(float *ref, float *kp, float *ki, float *kd, const float min, const float max);
+	explicit PIDhandler(float *ref, float *kp, float *ki, float *kd, float *kp_straight,float *ki_straight,float *kd_straight,const float min, const float max);
 	float updatePID(float val);
 	float updatePID_ori(float val);
 
@@ -33,6 +33,8 @@ public:
 	float returnKiresult(){return *Ki * eSum;}
 	float returnKdresult(){return *Kd * dE;}
 
+	int8_t returnTypeOfPID(){return TypeOfPID;}
+
 private:
 
 	float min;
@@ -43,6 +45,10 @@ private:
 	float *Ki;
 	float *Kd;
 
+	float *Kp_straight;
+	float *Ki_straight;
+	float *Kd_straight;
+
 	float dE;
 
 	float eSum;
@@ -51,4 +57,6 @@ private:
 	Timer::TimerInt lastTimeUpdate;
 
 	float output;
+
+	int8_t TypeOfPID;
 };

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "app.h"
+#include "pid_controller.h"
 
 namespace camera
 {
@@ -17,13 +18,32 @@ class Launcher : public App
 {
 public:
 	explicit Launcher(SystemRes *res)
-			: App(res)
+			: App(res),
+			  l_m_setpoint(0),
+			  r_m_setpoint(0),
+
+			  l_kp(0.0108f),
+			  l_ki(0.0f),
+			  l_kd(0.00055f),
+
+			  r_kp(0.0104f),
+			  r_ki(0.0f),
+			  r_kd(0.00055f),
+
+			  l_speedControl(&l_m_setpoint, &l_kp, &l_ki, &l_kd,0,0,0, 0, 950),
+			  r_speedControl(&r_m_setpoint, &r_kp, &r_ki, &r_kd,0,0,0, 0, 950)
 
 	{
-			data[0] = 1275.0f;
-			data[1] = 0.43f;
+			data[0] = 1350.0f;
+			data[1] = 0.475f;
 			data[2] = 0.0f;
-			data[3] = 0.045f;
+			data[3] = 0.0455f;
+
+			data[4] = 0.35f;
+			data[5] = 0.068f;
+
+			l_m_setpoint = data[0];
+			r_m_setpoint = data[0];
 	}
 
 	void Run();
@@ -31,7 +51,21 @@ public:
 private:
 	void StartApp(const int id);
 	void setParam(const int id);
-	float data[4];
+	float data[6];
+
+	float l_m_setpoint;
+	float r_m_setpoint;
+
+	float l_kp;
+	float l_ki;
+	float l_kd;
+
+	float r_kp;
+	float r_ki;
+	float r_kd;
+
+	PIDhandler l_speedControl;
+	PIDhandler r_speedControl;
 };
 
 }

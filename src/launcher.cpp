@@ -40,7 +40,9 @@ using namespace libutil;
 #define SERVO_KP 1
 #define SERVO_KI 2
 #define SERVO_KD 3
-#define START_APP 4
+#define STRAIGHT_KP 4
+#define STRAIGHT_KD 5
+#define START_APP 6
 
 namespace camera
 {
@@ -204,6 +206,8 @@ void Launcher::setParam(const int id){
 
 	bool editing=false;
 
+	bool motor_run = false;
+
 	//Input setpoint, servo - kp, ki, kd
 	// Pop stack to save resources
 	{
@@ -236,8 +240,30 @@ void Launcher::setParam(const int id){
 		menu.AddItem(SERVO_KP, "SERVO KP");
 		menu.AddItem(SERVO_KI, "SERVO KI");
 		menu.AddItem(SERVO_KD, "SERVO KD");
+		menu.AddItem(STRAIGHT_KP, "STRAIGHT KP");
+		menu.AddItem(STRAIGHT_KD, "STRAIGHT KD");
 		menu.AddItem(START_APP,"START");
 		menu.Select(0);
+
+		std::function<void(const Timer::TimerInt, const Timer::TimerInt)> motor =
+				[&](const Timer::TimerInt, const Timer::TimerInt)
+		{
+			//update and get encoder's count
+			car->UpdateAllEncoders();
+
+			//if motor_run is true, update PID and give power to car, else stop the car
+			if(motor_run){
+				car->SetMotorPower(0,(int16_t)l_speedControl.updatePID((float)car->GetEncoderCount(0)));
+				car->SetMotorPower(1,(int16_t)r_speedControl.updatePID((float)car->GetEncoderCount(1)));
+			}
+
+			else {
+				car->SetMotorPower(0,0);
+				car->SetMotorPower(1,0);
+			}
+
+		};
+		looper.Repeat(11, motor, Looper::RepeatMode::kPrecise);
 
 		std::function<void(const Timer::TimerInt, const Timer::TimerInt)> printData =
 				[&](const Timer::TimerInt request, const Timer::TimerInt)
@@ -248,6 +274,7 @@ void Launcher::setParam(const int id){
 			if(editing){
 				writer.WriteString(String::Format("%f",data[menu.GetSelectedId()]).c_str());
 			}
+
 			else{
 				writer.WriteString(" ");
 			}
@@ -267,6 +294,8 @@ void Launcher::setParam(const int id){
 
 				case SETPOINT:
 					data[0] -= 25;
+					l_m_setpoint -=25;
+					r_m_setpoint -= 25;
 					break;
 
 				case SERVO_KP:
@@ -279,6 +308,14 @@ void Launcher::setParam(const int id){
 
 				case SERVO_KD:
 					data[3] -= 0.0005;
+					break;
+
+				case STRAIGHT_KP:
+					data[4] -= 0.005;
+					break;
+
+				case STRAIGHT_KD:
+					data[5] -= 0.0005;
 					break;
 
 				}
@@ -299,6 +336,8 @@ void Launcher::setParam(const int id){
 
 				case SETPOINT:
 					data[0] += 25;
+					l_m_setpoint +=25;
+					r_m_setpoint += 25;
 					break;
 
 				case SERVO_KP:
@@ -311,6 +350,14 @@ void Launcher::setParam(const int id){
 
 				case SERVO_KD:
 					data[3] += 0.0005;
+					break;
+
+				case STRAIGHT_KP:
+					data[4] += 0.005;
+					break;
+
+				case STRAIGHT_KD:
+					data[5] += 0.0005;
 					break;
 
 				}
@@ -330,27 +377,8 @@ void Launcher::setParam(const int id){
 
 			if(editing){
 
-				switch(menu.GetSelectedId())
-				{
-
-				case SETPOINT:
-					menu.edit_label(SETPOINT, "SETPOINT");
-					break;
-
-				case SERVO_KP:
-					menu.edit_label(SERVO_KP, "SERVO KP");
-					break;
-
-				case SERVO_KI:
-					menu.edit_label(SERVO_KI, "SERVO KI");
-					break;
-
-				case SERVO_KD:
-					menu.edit_label(SERVO_KD, "SERVO KD");
-					break;
-
-				}
 				editing = false;
+				motor_run = false;
 
 			}
 			else{
@@ -360,6 +388,14 @@ void Launcher::setParam(const int id){
 
 				case START_APP:
 					looper.Break();
+					break;
+
+				case SETPOINT:
+					l_speedControl.reset();
+					r_speedControl.reset();
+
+					motor_run = true;
+					editing = true;
 					break;
 
 				default:
@@ -420,7 +456,7 @@ void Launcher::StartApp(const int id)
 	case RUN_TEST_ID:
 	{
 
-		RunTestApp app(GetSystemRes(),data[0],data[1],data[2],data[3]);
+		RunTestApp app(GetSystemRes(),data[0],data[1],data[2],data[3],data[4],data[5]);
 
 		float adc_result = car->GetAdc().GetResultF();
 
@@ -443,7 +479,7 @@ void Launcher::StartApp(const int id)
 
 	case COMPETE_ID:
 	{
-		SCStudioTestApp app(GetSystemRes(),data[0],data[1],data[2],data[3]);
+		SCStudioTestApp app(GetSystemRes(),data[0],data[1],data[2],data[3],data[4],data[5]);
 
 		float adc_result = car->GetAdc().GetResultF();
 

@@ -10,6 +10,7 @@
 #include <libsc/system.h>
 
 #include "pid_controller.h"
+#include "definition.h"
 
 #include <libutil/misc.h>
 
@@ -18,19 +19,23 @@ using namespace libsc;
 #define abs(v) ((v > 0)? v : -v)
 #define	inRange(n, v, x) ((v > x)? x : ((v < n)? n : v))
 
-PIDhandler::PIDhandler(float *ref, float *kp, float *ki, float *kd, const float min, const float max)
+PIDhandler::PIDhandler(float *ref, float *kp, float *ki, float *kd, float *kp_straight,float *ki_straight,float *kd_straight,const float min, const float max)
 :
+	min(min),
+	max(max),
 	reference(ref),
 	Kp(kp),
 	Ki(ki),
 	Kd(kd),
+	Kp_straight(kp_straight),
+	Ki_straight(ki_straight),
+	Kd_straight(kd_straight),
 	eSum(0),
-	output(0),
 	lastError(0),
 	epsilon(*reference * EPSILON_RATIO),
 	lastTimeUpdate(0),
-	min(min),
-	max(max)
+	output(0),
+	TypeOfPID(INIT_STATE)
 {
 	System::Init();
 	reset();
@@ -89,8 +94,17 @@ float PIDhandler::updatePID_ori(float val)
 	float dE = (error - lastError) / dt;
 	lastError = error;
 
+	if(val>-9.8*FACTOR && val<9*FACTOR)
+	{
+		output = *Kp_straight * lastError/* - *Kp * lastError * abs(lastError)*/ + *Kd_straight * dE;
+		TypeOfPID = STRAIGHT;
+	}
 
-	output = *Kp * lastError/* - *Kp * lastError * abs(lastError)*/ + *Ki * eSum + *Kd * dE;
+	else
+	{
+		output = *Kp * lastError/* - *Kp * lastError * abs(lastError)*/+ *Kd * dE;
+		TypeOfPID = TURNING;
+	}
 
 	lastTimeUpdate = System::Time();
 

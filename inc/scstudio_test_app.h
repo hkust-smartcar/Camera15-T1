@@ -29,7 +29,7 @@ namespace camera
 class SCStudioTestApp : public App
 {
 public:
-	explicit SCStudioTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float ski, float skd);
+	explicit SCStudioTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float ski, float skd, float s_skp, float s_skd);
 	void Run() override;
 
 private:
@@ -41,6 +41,10 @@ private:
 	float s_kp;
 	float s_ki;
 	float s_kd;
+
+	float s_kp_straight;
+	float s_ki_straight;
+	float s_kd_straight;
 
 	float s_setpoint;
 

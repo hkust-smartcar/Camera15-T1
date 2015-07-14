@@ -48,13 +48,13 @@ void CarTestApp::Run()
 
 	looper.Repeat(199, std::bind(&libsc::Led::Switch, &car->GetLed(0)), Looper::RepeatMode::kLoose);
 
-//	LcdTypewriter::Config writer_conf;
-//	writer_conf.lcd = &car->GetLcd();
-//	writer_conf.bg_color = libutil::GetRgb565(0x33, 0xB5, 0xE5);
-//	LcdTypewriter writer(writer_conf);
+	LcdTypewriter::Config writer_conf;
+	writer_conf.lcd = &car->GetLcd();
+	writer_conf.bg_color = libutil::GetRgb565(0x33, 0xB5, 0xE5);
+	LcdTypewriter writer(writer_conf);
 //
-//	car->GetLcd().SetRegion({0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()});
-//	writer.WriteString("Encoder:");
+	car->GetLcd().SetRegion({0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()});
+	writer.WriteString("Encoder:");
 //
 //	car->SetMotorPower(0,500);
 //	car->SetMotorPower(1,1000);
@@ -63,7 +63,7 @@ void CarTestApp::Run()
 				[&](const Timer::TimerInt, const Timer::TimerInt)
 			{
 				car->UpdateAllEncoders();
-				ec+=car->GetEncoderCount(1);
+//				ec+=car->GetEncoderCount(1);
 #ifdef CAR_WITH_BT
 				char buffer[100];
 				sprintf(buffer,"%ld    %ld\n",car->GetEncoderCount(0),car->GetEncoderCount(1));
@@ -72,7 +72,7 @@ void CarTestApp::Run()
 				car->GetLcd().SetRegion({0, 144, St7735r::GetW(),
 						LcdTypewriter::GetFontH()});
 				writer.WriteString(String::Format("%ld, %ld\n",
-						car->GetEncoderCount(0), ec).c_str());
+						car->GetEncoderCount(0), car->GetEncoderCount(1)).c_str());
 #endif
 			};
 	looper.Repeat(11, encoder, Looper::RepeatMode::kPrecise);

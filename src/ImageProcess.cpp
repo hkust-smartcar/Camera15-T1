@@ -22,9 +22,6 @@ ImageProcess::ImageProcess(Car* car_ptr)
 	white_start(CE-1),
 	white_end(CE-1),
 
-	//amplify error
-	FACTOR(100),
-
 	//indicate situation
 	crossroad(false),
 	l_byebye(false),

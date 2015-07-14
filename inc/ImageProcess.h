@@ -60,9 +60,6 @@ private:
 	uint8_t white_start;
 	uint8_t white_end;
 
-	//for amplifying error
-	uint8_t FACTOR;
-
 	//indicate situation
 	bool crossroad;
 	bool l_byebye;

@@ -39,12 +39,16 @@ using namespace std;
 namespace camera
 {
 
-SCStudioTestApp::SCStudioTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float ski, float skd)
+SCStudioTestApp::SCStudioTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float ski, float skd, float s_skp, float s_skd)
 : App(res),
 
   s_kp(skp),
   s_ki(ski),
   s_kd(skd),
+
+  s_kp_straight(s_skp),
+  s_ki_straight(0.0f),
+  s_kd_straight(s_skd),
 
   s_setpoint(0.0f),
 
@@ -65,9 +69,9 @@ SCStudioTestApp::SCStudioTestApp(SystemRes *res, uint16_t motor_setpoint, float 
 
   RA_time(System::Time()),
 
-  servo_Control(&s_setpoint, &s_kp, &s_ki, &s_kd, -1000, 1000),
-  l_speedControl(&l_m_setpoint, &l_kp, &l_ki, &l_kd, 0, 950),
-  r_speedControl(&r_m_setpoint, &r_kp, &r_ki, &r_kd, 0, 950),
+  servo_Control(&s_setpoint, &s_kp, &s_ki, &s_kd,&s_kp_straight, &s_ki_straight, &s_kd_straight, -1000, 1000),
+  l_speedControl(&l_m_setpoint, &l_kp, &l_ki, &l_kd,0,0,0, 0, 950),
+  r_speedControl(&r_m_setpoint, &r_kp, &r_ki, &r_kd,0,0,0, 0, 950),
 
   imageProcess(GetSystemRes()->car),
 

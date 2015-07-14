@@ -28,7 +28,7 @@ namespace camera
 class RunTestApp : public App
 {
 public:
-	explicit RunTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float ski, float skd);
+	explicit RunTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float ski, float skd, float s_skp, float s_skd);
 	void Run() override;
 
 	RunTestApp &getInstance(void);
@@ -42,6 +42,10 @@ private:
 	float s_kp;
 	float s_ki;
 	float s_kd;
+
+	float s_kp_straight;
+	float s_ki_straight;
+	float s_kd_straight;
 
 	float s_setpoint;
 
@@ -112,6 +116,8 @@ private:
 	float printRKi;
 	float printRKd;
 
+	Timer::TimerInt prev_time;
+	Timer::TimerInt time_difference;
 
 };
 }

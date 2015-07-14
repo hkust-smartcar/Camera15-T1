@@ -41,12 +41,16 @@ namespace camera
 
 RunTestApp *m_instance;
 
-RunTestApp::RunTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float ski, float skd)
+RunTestApp::RunTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float ski, float skd, float s_skp, float s_skd)
 : App(res),
 
   s_kp(skp),
   s_ki(ski),
   s_kd(skd),
+
+  s_kp_straight(s_skp),
+  s_ki_straight(0.0f),
+  s_kd_straight(s_skd),
 
   s_setpoint(0.0f),
 
@@ -69,9 +73,9 @@ RunTestApp::RunTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float
 
   RA_time(System::Time()),
 
-  servo_Control(&s_setpoint, &s_kp, &s_ki, &s_kd, -1000, 1000),
-  l_speedControl(&l_m_setpoint, &l_kp, &l_ki, &l_kd, 0, 950),
-  r_speedControl(&r_m_setpoint, &r_kp, &r_ki, &r_kd, 0, 950),
+  servo_Control(&s_setpoint, &s_kp, &s_ki, &s_kd,&s_kp_straight, &s_ki_straight, &s_kd_straight, -1000, 1000),
+  l_speedControl(&l_m_setpoint, &l_kp, &l_ki, &l_kd,0,0,0, 0, 950),
+  r_speedControl(&r_m_setpoint, &r_kp, &r_ki, &r_kd,0,0,0, 0, 950),
 
   imageProcess(GetSystemRes()->car),
 
@@ -79,7 +83,10 @@ RunTestApp::RunTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float
   m_is_stop(false),
 
   prev_adc(0),
-  gpo(0)
+  gpo(0),
+
+  prev_time(System::Time()),
+  time_difference(0)
 
 {
 	//raw data: left & right encoder, servo angle
@@ -162,6 +169,9 @@ void RunTestApp::DetectEmergencyStop(){
 void RunTestApp::Run()
 {
 
+	time_difference = System::Time() - prev_time;
+	prev_time = System::Time();
+
 	/************************INITIALIZATION***********************/
 
 	//Get car
@@ -193,63 +203,70 @@ void RunTestApp::Run()
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> bt =
 			[&](const Timer::TimerInt, const Timer::TimerInt)
 	{
-		char received;
-		if(car->GetUart().PeekChar(&received)){
-			switch(received){
-
-			//move & stop
-			case 'f':
-				//reset pid
-				l_speedControl.reset();
-				r_speedControl.reset();
-				servo_Control.reset();
-
-				if(motor_run)
-					motor_run = false;
-				else{
-					m_start = System::Time();
-					m_is_stop = false;
-					motor_run = true;
-				}
-				break;
-
-			//faster!
-			case 'r':
-				l_m_setpoint += 100.0f;
-				r_m_setpoint += 100.0f;
-				sd_setpoint += 100.0f;
-				break;
-
-			//slower!
-			case 'R':
-				l_m_setpoint -= 100.0f;
-				r_m_setpoint -= 100.0f;
-				sd_setpoint -= 100.0f;
-				break;
-
-			//servo kp
-			case 'p':
-				s_kp += 0.005f;
-				break;
-
-			case 'P':
-				s_kp -= 0.005f;
-				break;
-
-			//servo kd
-			case 'd':
-				s_kd += 0.0005f;
-				break;
-
-			case 'D':
-				s_kd -= 0.0005f;
-				break;
-
-			}
-		}
+//		char received;
+//		if(car->GetUart().PeekChar(&received)){
+//			switch(received){
+//
+//			//move & stop
+//			case 'f':
+//				//reset pid
+//				l_speedControl.reset();
+//				r_speedControl.reset();
+//				servo_Control.reset();
+//
+//				if(motor_run)
+//					motor_run = false;
+//				else{
+//					m_start = System::Time();
+//					m_is_stop = false;
+//					motor_run = true;
+//				}
+//				break;
+//
+//			//faster!
+//			case 'r':
+//				l_m_setpoint += 100.0f;
+//				r_m_setpoint += 100.0f;
+//				sd_setpoint += 100.0f;
+//				break;
+//
+//			//slower!
+//			case 'R':
+//				l_m_setpoint -= 100.0f;
+//				r_m_setpoint -= 100.0f;
+//				sd_setpoint -= 100.0f;
+//				break;
+//
+//			//servo kp
+//			case 'p':
+//				s_kp += 0.005f;
+//				break;
+//
+//			case 'P':
+//				s_kp -= 0.005f;
+//				break;
+//
+//			//servo kd
+//			case 'd':
+//				s_kd += 0.0005f;
+//				break;
+//
+//			case 'D':
+//				s_kd -= 0.0005f;
+//				break;
+//
+//			}
+//		}
 
 		char buffer[100];
-		sprintf(buffer,"%f    %f    %d    %ld    %ld    %ld    %ld\n", s_kp,s_kd, sd_setpoint, l_result, r_result,ec0,ec1);
+//		sprintf(buffer,"%f    %f    %d    %ld    %ld    %ld    %ld\n", s_kp,s_kd, sd_setpoint, l_result, r_result,ec0,ec1);
+		sprintf(buffer, "%ld    %ld    %ld\n",time_difference,ec0,ec1);
+//		if(servo_Control.returnTypeOfPID() == STRAIGHT){
+//			sprintf(buffer,"STRAIGHT:	%f\n", show_error);
+//		}
+//		else if(servo_Control.returnTypeOfPID() == TURNING){
+//			sprintf(buffer,"TURNING:	%f\n", show_error);
+//		}
 		car->GetUart().SendStr(buffer);
 	};
 	looper.Repeat(31, bt, Looper::RepeatMode::kPrecise);
@@ -307,7 +324,7 @@ void RunTestApp::Run()
 	/*Update servo error, input to and update servo PID controller*/
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> servo =
 			[&](const Timer::TimerInt, const Timer::TimerInt)
-			{
+	{
 
 		if (car->GetCamera().IsAvailable())
 		{
@@ -345,15 +362,16 @@ void RunTestApp::Run()
 			r_result = (int32_t)r_speedControl.updatePID((float)car->GetEncoderCount(1));
 			car->SetMotorPower(1,r_result);
 
-
-
 			DetectEmergencyStop();
 		}
 		else {
 			car->SetMotorPower(0,0);
 			car->SetMotorPower(1,0);
 		}
-			};
+
+		time_difference = System::Time()-prev_time;
+		prev_time = System::Time();
+	};
 	looper.Repeat(11, servo, Looper::RepeatMode::kPrecise);
 
 

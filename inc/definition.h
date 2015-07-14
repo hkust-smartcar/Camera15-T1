@@ -1,3 +1,5 @@
+#define FACTOR 100
+
 //image info
 #define HEIGHT 58
 #define WIDTH 78
