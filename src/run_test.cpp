@@ -89,16 +89,26 @@ RunTestApp::RunTestApp(SystemRes *res, uint16_t motor_setpoint, float skp, float
 	l_result=0;
 	r_result=0;
 
+	printLKp = 0;
+	printLKi = 0;
+	printLKd = 0;
+
+	printRKp = 0;
+	printRKi = 0;
+	printRKd = 0;
+
 	m_instance = this;
 
 #ifdef PGRAPHER
 
 	//for grapher use
 	m_peter.addWatchedVar(&sd_setpoint, "sd_setpoint");
-	m_peter.addWatchedVar(&ec0,"left error");
-	m_peter.addWatchedVar(&ec1,"right error");
 	m_peter.addWatchedVar(&l_result,"left pwm");
 	m_peter.addWatchedVar(&r_result,"right pwm");
+	m_peter.addWatchedVar(&printLKp, "*LKP");
+	m_peter.addWatchedVar(&printLKi, "*LKI");
+	m_peter.addWatchedVar(&printLKd, "*LKD");
+
 
 	m_peter.addSharedVar(&s_kp,"skp");
 //	m_peter.addSharedVar(&s_ki,"ski");
@@ -334,6 +344,8 @@ void RunTestApp::Run()
 
 			r_result = (int32_t)r_speedControl.updatePID((float)car->GetEncoderCount(1));
 			car->SetMotorPower(1,r_result);
+
+
 
 			DetectEmergencyStop();
 		}

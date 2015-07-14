@@ -48,15 +48,15 @@ void CarTestApp::Run()
 
 	looper.Repeat(199, std::bind(&libsc::Led::Switch, &car->GetLed(0)), Looper::RepeatMode::kLoose);
 
-	LcdTypewriter::Config writer_conf;
-	writer_conf.lcd = &car->GetLcd();
-	writer_conf.bg_color = libutil::GetRgb565(0x33, 0xB5, 0xE5);
-	LcdTypewriter writer(writer_conf);
-
-	car->GetLcd().SetRegion({0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()});
-	writer.WriteString("Encoder:");
+//	LcdTypewriter::Config writer_conf;
+//	writer_conf.lcd = &car->GetLcd();
+//	writer_conf.bg_color = libutil::GetRgb565(0x33, 0xB5, 0xE5);
+//	LcdTypewriter writer(writer_conf);
 //
-//	car->SetMotorPower(0,1000);
+//	car->GetLcd().SetRegion({0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()});
+//	writer.WriteString("Encoder:");
+//
+//	car->SetMotorPower(0,500);
 //	car->SetMotorPower(1,1000);
 
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> encoder =
@@ -86,10 +86,10 @@ void CarTestApp::Run()
 			memcpy(image2.get(), car->GetCamera().LockBuffer(), image_size);
 			car->GetCamera().UnlockBuffer();
 
-			car->GetLcd().SetRegion({0, 0, car->GetCameraW(), car->GetCameraH()});
-			car->GetLcd().FillBits(0, 0xFFFF, image2.get(),
-					car->GetCameraW() * car->GetCameraH());
-
+//			car->GetLcd().SetRegion({0, 0, car->GetCameraW(), car->GetCameraH()});
+//			car->GetLcd().FillBits(0, 0xFFFF, image2.get(),
+//					car->GetCameraW() * car->GetCameraH());
+//
 			mf.medianFilterPrint(image2.get(), &car->GetLcd());
 
 		}

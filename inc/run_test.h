@@ -104,6 +104,14 @@ private:
 	float prev_adc;
 	float gpo;
 
+	float printLKp;
+	float printLKi;
+	float printLKd;
+
+	float printRKp;
+	float printRKi;
+	float printRKd;
+
 
 };
 }

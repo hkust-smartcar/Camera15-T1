@@ -92,6 +92,13 @@ void Launcher::Run()
 	car->GetServo().SetDegree(SERVO_MID_DEGREE);
 
 
+	const Uint image_size = car->GetCameraW() * car->GetCameraH() / 8;
+				unique_ptr<Byte[]> image2(new Byte[image_size]);
+
+	Looper looper;
+
+	car->GetCamera().Start();
+
 	while (true)
 	{
 
@@ -129,6 +136,21 @@ void Launcher::Run()
 			menu.AddItem(RUN_TEST_ID, "Run Test");
 			menu.AddItem(COMPETE_ID, "Compete");
 			menu.Select(0);
+
+			std::function<void(const Timer::TimerInt, const Timer::TimerInt)> checkcam =
+								[&](const Timer::TimerInt, const Timer::TimerInt)
+						{
+			if (car->GetCamera().IsAvailable())
+			{
+
+				memcpy(image2.get(), car->GetCamera().LockBuffer(), image_size);
+				car->GetCamera().UnlockBuffer();
+				car->GetLcd().SetRegion({0, 100, car->GetCameraW(), car->GetCameraH()});
+				car->GetLcd().FillBits(0, 0xFFFF, image2.get(),
+						car->GetCameraW() * car->GetCameraH());
+			}
+						};
+			looper.Repeat(25,checkcam,Looper::RepeatMode::kLoose);
 
 			int position_offset = 0;
 			Joystick::Config js_config;
@@ -173,11 +195,13 @@ void Launcher::Run()
 		setParam(run_app_id);
 //		StartApp(run_app_id);
 	}
+	car->GetCamera().Stop();
 }
 
 void Launcher::setParam(const int id){
 
 	Car *car = GetSystemRes()->car;
+
 	bool editing=false;
 
 	//Input setpoint, servo - kp, ki, kd

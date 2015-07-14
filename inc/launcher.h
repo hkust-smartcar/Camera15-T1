@@ -44,8 +44,8 @@ private:
 			data[3] = 0.045f;
 
 			faster?
-  			data[0] = 1325.0f;
-			data[1] = 0.455f;
+  			data[0] = 1350.0f;
+			data[1] = 0.46f;
 			data[2] = 0.0f;
 			data[3] = 0.046f;
 */

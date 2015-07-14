@@ -29,6 +29,10 @@ public:
 
 	void reset(void);
 
+	float returnKpresult(){return *Kp * lastError;}
+	float returnKiresult(){return *Ki * eSum;}
+	float returnKdresult(){return *Kd * dE;}
+
 private:
 
 	float min;
@@ -38,6 +42,8 @@ private:
 	float *Kp;
 	float *Ki;
 	float *Kd;
+
+	float dE;
 
 	float eSum;
 	float lastError;

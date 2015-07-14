@@ -63,7 +63,8 @@ float PIDhandler::updatePID(float val)
 {
 	float error = *reference - val;
 	float dt = Timer::TimeDiff(System::Time(), lastTimeUpdate)/1000.0f;
-	float dE = (error - lastError) / dt;
+//	float
+	dE = (error - lastError) / dt;
 	lastError = error;
 
 	if (abs(lastError) >= epsilon)
