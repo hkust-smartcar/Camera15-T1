@@ -242,17 +242,20 @@ void SCStudioTestApp::Run()
 
 			car->SetMotorPower(1,(int32_t)r_speedControl.updatePID((float)car->GetEncoderCount(1)));
 
-			ScStudio::GraphPack pack(9);
+			ScStudio::GraphPack pack(11);
+
 			pack.Pack(0, sd_setpoint);
 			pack.PackF(1, l_speedControl.returnKpresult());
 			pack.PackF(2, l_speedControl.returnKiresult());
 			pack.PackF(3, l_speedControl.returnKdresult());
 			pack.Pack(4, car->GetMotor(0).GetPower());
+			pack.PackF(5, (float)car->GetEncoderCount(0));
 
-			pack.PackF(5, r_speedControl.returnKpresult());
-			pack.PackF(6, r_speedControl.returnKiresult());
-			pack.PackF(7, r_speedControl.returnKdresult());
-			pack.Pack(8, car->GetMotor(1).GetPower());
+			pack.PackF(6, r_speedControl.returnKpresult());
+			pack.PackF(7, r_speedControl.returnKiresult());
+			pack.PackF(8, r_speedControl.returnKdresult());
+			pack.Pack(9, car->GetMotor(1).GetPower());
+			pack.PackF(10, (float)car->GetEncoderCount(1));
 
 			scstudio.SendGraph(pack);
 

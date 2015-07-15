@@ -10,6 +10,8 @@
 
 #include "app.h"
 #include "pid_controller.h"
+#include "ImageProcess.h"
+#include <libutil/sc_studio.h>
 
 namespace camera
 {
@@ -32,18 +34,19 @@ public:
 
 			  l_speedControl(&l_m_setpoint, &l_kp, &l_ki, &l_kd,0,0,0, 0, 950),
 			  r_speedControl(&r_m_setpoint, &r_kp, &r_ki, &r_kd,0,0,0, 0, 950)
+//			  imageProcess(GetSystemRes()->car)
 
 	{
 			data[0] = 1350.0f;
 			data[1] = 0.475f;
-			data[2] = 0.0f;
-			data[3] = 0.0455f;
+			data[2] = 0.0455f;
 
-			data[4] = 0.35f;
-			data[5] = 0.068f;
+			data[3] = 0.35f;
+			data[4] = 0.068f;
 
 			l_m_setpoint = data[0];
 			r_m_setpoint = data[0];
+
 	}
 
 	void Run();
@@ -51,7 +54,7 @@ public:
 private:
 	void StartApp(const int id);
 	void setParam(const int id);
-	float data[6];
+	float data[5];
 
 	float l_m_setpoint;
 	float r_m_setpoint;
@@ -66,6 +69,9 @@ private:
 
 	PIDhandler l_speedControl;
 	PIDhandler r_speedControl;
+
+	libutil::ScStudio scstudio;
+//	ImageProcess  imageProcess;
 };
 
 }

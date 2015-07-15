@@ -528,7 +528,7 @@ float ImageProcess::MidpointSumCal(uint16_t start, uint16_t end){
 //decide what result to return
 float ImageProcess::Analyze(void){
 
-	float error = MIDPOINT_REF - MidpointSumCal(MS,ME)/10;
+	float error = MIDPOINT_REF - MidpointSumCal(MS,ME)/(ME-MS);
 
 	if(black_guide_line){
 		STATE = BLACK_GUIDE;

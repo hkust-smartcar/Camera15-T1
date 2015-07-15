@@ -38,11 +38,10 @@ using namespace libutil;
 
 #define SETPOINT 0
 #define SERVO_KP 1
-#define SERVO_KI 2
-#define SERVO_KD 3
-#define STRAIGHT_KP 4
-#define STRAIGHT_KD 5
-#define START_APP 6
+#define SERVO_KD 2
+#define STRAIGHT_KP 3
+#define STRAIGHT_KD 4
+#define START_APP 5
 
 namespace camera
 {
@@ -141,18 +140,32 @@ void Launcher::Run()
 
 			std::function<void(const Timer::TimerInt, const Timer::TimerInt)> checkcam =
 								[&](const Timer::TimerInt, const Timer::TimerInt)
-						{
-			if (car->GetCamera().IsAvailable())
 			{
+				if (car->GetCamera().IsAvailable())
+				{
 
-				memcpy(image2.get(), car->GetCamera().LockBuffer(), image_size);
-				car->GetCamera().UnlockBuffer();
-				car->GetLcd().SetRegion({0, 100, car->GetCameraW(), car->GetCameraH()});
-				car->GetLcd().FillBits(0, 0xFFFF, image2.get(),
-						car->GetCameraW() * car->GetCameraH());
-			}
-						};
+					memcpy(image2.get(), car->GetCamera().LockBuffer(), image_size);
+					car->GetCamera().UnlockBuffer();
+					car->GetLcd().SetRegion({0, 90, car->GetCameraW(), car->GetCameraH()});
+					car->GetLcd().FillBits(0, 0xFFFF, image2.get(),
+							car->GetCameraW() * car->GetCameraH());
+//					imageProcess.start(image2.get());
+
+				}
+			};
 			looper.Repeat(25,checkcam,Looper::RepeatMode::kLoose);
+
+			std::function<void(const Timer::TimerInt, const Timer::TimerInt)> printData =
+					[&](const Timer::TimerInt request, const Timer::TimerInt)
+			{
+				car->GetLcd().SetRegion(Lcd::Rect(0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()));
+				writer.SetBgColor(Lcd::kBlack);
+				writer.SetTextColor(Lcd::kWhite);
+//				writer.WriteString(String::Format("error:  %f",imageProcess.Analyze()).c_str());
+
+				looper.RunAfter(request, printData);
+			};
+			looper.RunAfter(11, printData);
 
 			int position_offset = 0;
 			Joystick::Config js_config;
@@ -208,6 +221,10 @@ void Launcher::setParam(const int id){
 
 	bool motor_run = false;
 
+#ifdef CAR_WITH_BT
+	scstudio.SetUart(&car->GetUart());
+#endif
+
 	//Input setpoint, servo - kp, ki, kd
 	// Pop stack to save resources
 	{
@@ -238,7 +255,6 @@ void Launcher::setParam(const int id){
 		LcdMenu menu(&car->GetLcd());
 		menu.AddItem(SETPOINT, "SETPOINT");
 		menu.AddItem(SERVO_KP, "SERVO KP");
-		menu.AddItem(SERVO_KI, "SERVO KI");
 		menu.AddItem(SERVO_KD, "SERVO KD");
 		menu.AddItem(STRAIGHT_KP, "STRAIGHT KP");
 		menu.AddItem(STRAIGHT_KD, "STRAIGHT KD");
@@ -253,8 +269,27 @@ void Launcher::setParam(const int id){
 
 			//if motor_run is true, update PID and give power to car, else stop the car
 			if(motor_run){
+
 				car->SetMotorPower(0,(int16_t)l_speedControl.updatePID((float)car->GetEncoderCount(0)));
 				car->SetMotorPower(1,(int16_t)r_speedControl.updatePID((float)car->GetEncoderCount(1)));
+
+				ScStudio::GraphPack pack(11);
+
+				pack.Pack(0, data[0]);
+				pack.PackF(1, l_speedControl.returnKpresult());
+				pack.PackF(2, l_speedControl.returnKiresult());
+				pack.PackF(3, l_speedControl.returnKdresult());
+				pack.Pack(4, car->GetMotor(0).GetPower());
+				pack.PackF(5, (float)car->GetEncoderCount(0));
+
+				pack.PackF(6, r_speedControl.returnKpresult());
+				pack.PackF(7, r_speedControl.returnKiresult());
+				pack.PackF(8, r_speedControl.returnKdresult());
+				pack.Pack(9, car->GetMotor(1).GetPower());
+				pack.PackF(10, (float)car->GetEncoderCount(1));
+
+				scstudio.SendGraph(pack);
+
 			}
 
 			else {
@@ -265,22 +300,22 @@ void Launcher::setParam(const int id){
 		};
 		looper.Repeat(11, motor, Looper::RepeatMode::kPrecise);
 
-		std::function<void(const Timer::TimerInt, const Timer::TimerInt)> printData =
-				[&](const Timer::TimerInt request, const Timer::TimerInt)
-		{
-			car->GetLcd().SetRegion(Lcd::Rect(0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()));
-			writer.SetBgColor(Lcd::kWhite);
-			writer.SetTextColor(Lcd::kPurple);
-			if(editing){
-				writer.WriteString(String::Format("%f",data[menu.GetSelectedId()]).c_str());
-			}
-
-			else{
-				writer.WriteString(" ");
-			}
-			looper.RunAfter(request, printData);
-		};
-		looper.RunAfter(30, printData);
+//		std::function<void(const Timer::TimerInt, const Timer::TimerInt)> printData =
+//				[&](const Timer::TimerInt request, const Timer::TimerInt)
+//		{
+//			car->GetLcd().SetRegion(Lcd::Rect(0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()));
+//			writer.SetBgColor(Lcd::kWhite);
+//			writer.SetTextColor(Lcd::kPurple);
+//			if(editing){
+//				writer.WriteString(String::Format("%f",data[menu.GetSelectedId()]).c_str());
+//			}
+//
+//			else{
+//				writer.WriteString(" ");
+//			}
+//			looper.RunAfter(request, printData);
+//		};
+//		looper.RunAfter(30, printData);
 
 		int position_offset = 0;
 		Joystick::Config js_config;
@@ -302,20 +337,16 @@ void Launcher::setParam(const int id){
 					data[1] -= 0.005;
 					break;
 
-				case SERVO_KI:
-					data[2] -= 0.005;
-					break;
-
 				case SERVO_KD:
-					data[3] -= 0.0005;
+					data[2] -= 0.0005;
 					break;
 
 				case STRAIGHT_KP:
-					data[4] -= 0.005;
+					data[3] -= 0.005;
 					break;
 
 				case STRAIGHT_KD:
-					data[5] -= 0.0005;
+					data[4] -= 0.0005;
 					break;
 
 				}
@@ -344,20 +375,16 @@ void Launcher::setParam(const int id){
 					data[1] += 0.005;
 					break;
 
-				case SERVO_KI:
-					data[2] += 0.005;
-					break;
-
 				case SERVO_KD:
-					data[3] += 0.0005;
+					data[2] += 0.0005;
 					break;
 
 				case STRAIGHT_KP:
-					data[4] += 0.005;
+					data[3] += 0.005;
 					break;
 
 				case STRAIGHT_KD:
-					data[5] += 0.0005;
+					data[4] += 0.0005;
 					break;
 
 				}
@@ -376,6 +403,9 @@ void Launcher::setParam(const int id){
 		{
 
 			if(editing){
+
+				l_speedControl.reset();
+				r_speedControl.reset();
 
 				editing = false;
 				motor_run = false;
@@ -456,7 +486,7 @@ void Launcher::StartApp(const int id)
 	case RUN_TEST_ID:
 	{
 
-		RunTestApp app(GetSystemRes(),data[0],data[1],data[2],data[3],data[4],data[5]);
+		RunTestApp app(GetSystemRes(),data[0],data[1],0.0f,data[2],data[3],data[4]);
 
 		float adc_result = car->GetAdc().GetResultF();
 
@@ -479,7 +509,7 @@ void Launcher::StartApp(const int id)
 
 	case COMPETE_ID:
 	{
-		SCStudioTestApp app(GetSystemRes(),data[0],data[1],data[2],data[3],data[4],data[5]);
+		SCStudioTestApp app(GetSystemRes(),data[0],data[1],0.0f,data[2],data[3],data[4]);
 
 		float adc_result = car->GetAdc().GetResultF();
 

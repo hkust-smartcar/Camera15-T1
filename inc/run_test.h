@@ -108,14 +108,6 @@ private:
 	float prev_adc;
 	float gpo;
 
-	float printLKp;
-	float printLKi;
-	float printLKd;
-
-	float printRKp;
-	float printRKi;
-	float printRKd;
-
 	Timer::TimerInt prev_time;
 	Timer::TimerInt time_difference;
 
