@@ -303,7 +303,7 @@ void ImageProcess::start(Byte* image){
 	}
 
 	//cross road: ensure there are few rows of white
-	else if(white_count>HEIGHT/2){
+	else if(white_count>HEIGHT/3){
 
 		crossroad = true;
 
@@ -642,6 +642,9 @@ void ImageProcess::printResult(){
 			writer.WriteString("BLACK GUIDE");
 			break;
 		}
+
+		car->GetLcd().SetRegion(Lcd::Rect(0, 80, St7735r::GetW(), LcdTypewriter::GetFontH()));
+		writer.WriteString(String::Format("error: %f", Analyze()).c_str());
 
 
 	}

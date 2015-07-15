@@ -27,7 +27,7 @@
 
 //checking midpoint
 #define MS 25	//check start
-#define ME 36   //check end
+#define ME 37   //check end
 
 //for array use
 #define LEFT 0

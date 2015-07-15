@@ -191,64 +191,65 @@ void RunTestApp::Run()
 	std::function<void(const Timer::TimerInt, const Timer::TimerInt)> bt =
 			[&](const Timer::TimerInt, const Timer::TimerInt)
 	{
-//		char received;
-//		if(car->GetUart().PeekChar(&received)){
-//			switch(received){
-//
-//			//move & stop
-//			case 'f':
-//				//reset pid
-//				l_speedControl.reset();
-//				r_speedControl.reset();
-//				servo_Control.reset();
-//
-//				if(motor_run)
-//					motor_run = false;
-//				else{
-//					m_start = System::Time();
-//					m_is_stop = false;
-//					motor_run = true;
-//				}
-//				break;
-//
-//			//faster!
-//			case 'r':
-//				l_m_setpoint += 100.0f;
-//				r_m_setpoint += 100.0f;
-//				sd_setpoint += 100.0f;
-//				break;
-//
-//			//slower!
-//			case 'R':
-//				l_m_setpoint -= 100.0f;
-//				r_m_setpoint -= 100.0f;
-//				sd_setpoint -= 100.0f;
-//				break;
-//
-//			//servo kp
-//			case 'p':
-//				s_kp += 0.005f;
-//				break;
-//
-//			case 'P':
-//				s_kp -= 0.005f;
-//				break;
-//
-//			//servo kd
-//			case 'd':
-//				s_kd += 0.0005f;
-//				break;
-//
-//			case 'D':
-//				s_kd -= 0.0005f;
-//				break;
-//
-//			}
-//		}
+		char received;
+		if(car->GetUart().PeekChar(&received)){
+			switch(received){
+
+			//move & stop
+			case 'f':
+				//reset pid
+				l_speedControl.reset();
+				r_speedControl.reset();
+				servo_Control.reset();
+
+				if(motor_run)
+					motor_run = false;
+				else{
+					m_start = System::Time();
+					m_is_stop = false;
+					motor_run = true;
+				}
+				break;
+
+			//faster!
+			case 'r':
+				l_m_setpoint += 100.0f;
+				r_m_setpoint += 100.0f;
+				sd_setpoint += 100.0f;
+				break;
+
+			//slower!
+			case 'R':
+				l_m_setpoint -= 100.0f;
+				r_m_setpoint -= 100.0f;
+				sd_setpoint -= 100.0f;
+				break;
+
+			//servo kp
+			case 'p':
+				s_kp += 0.005f;
+				break;
+
+			case 'P':
+				s_kp -= 0.005f;
+				break;
+
+			//servo kd
+			case 'd':
+				s_kd += 0.0005f;
+				break;
+
+			case 'D':
+				s_kd -= 0.0005f;
+				break;
+
+			}
+		}
 
 		char buffer[100];
 //		sprintf(buffer,"%f    %f    %d    %ld    %ld    %ld    %ld\n", s_kp,s_kd, sd_setpoint, l_result, r_result,ec0,ec1);
-		sprintf(buffer, "%ld    %ld    %ld\n",time_difference,ec0,ec1);
+//		sprintf(buffer, "%ld    %ld    %ld\n",time_difference,ec0,ec1);
+		sprintf(buffer, "%f   %f    %f    %f\n",s_kp, s_kd, s_kp_straight,s_kd_straight);
 //		if(servo_Control.returnTypeOfPID() == STRAIGHT){
 //			sprintf(buffer,"STRAIGHT:	%f\n", show_error);
 //		}
@@ -279,7 +280,7 @@ void RunTestApp::Run()
 			car->GetGpo().Set(1);
 			gpo = 1;
 			prev_adc = 2.0f;
-//			car->GetBuzzer().SetBeep(false);
+			car->GetBuzzer().SetBeep(false);
 			//prev_adc = car->GetAdc().GetResultF();
 		}
 		//if GPO is on
@@ -287,18 +288,18 @@ void RunTestApp::Run()
 			//if ADC from 0 to 2, stop!
 			if(!is_startup && (car->GetAdc().GetResultF()-prev_adc)>1.0f){
 				motor_run = false;
-//				car->GetBuzzer().SetBeep(false);
+				car->GetBuzzer().SetBeep(false);
 			}
 			//turn GPO off, record prev ADC reading (normal)
 			else if(car->GetAdc().GetResultF()>1.0f){
 				car->GetGpo().Set(0);
 				gpo = 0;
 				prev_adc = 2.0f;
-//				car->GetBuzzer().SetBeep(false);
+				car->GetBuzzer().SetBeep(false);
 			}
 			//turn GPO off, record prev ADC reading (I saw IR!)
 			else if(car->GetAdc().GetResultF()<1.0f){
-//				car->GetBuzzer().SetBeep(true);
+				car->GetBuzzer().SetBeep(true);
 				prev_adc = 0.0f;
 				if(!is_startup){
 					sd_setpoint = 700;
@@ -325,6 +326,15 @@ void RunTestApp::Run()
 
 		float error = imageProcess.Analyze();
 		//imageProcess.printResult();
+
+		if(imageProcess.getState() == BLACK_GUIDE)
+		{
+			car->GetBuzzer().SetBeep(true);
+		}
+		else
+		{
+			car->GetBuzzer().SetBeep(false);
+		}
 
 		show_error = error;
 

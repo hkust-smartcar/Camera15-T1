@@ -11,7 +11,11 @@
 namespace camera
 {
 
-struct SystemRes;
+//struct SystemRes;
+struct SystemRes
+{
+	Car *car;
+};
 
 }
 

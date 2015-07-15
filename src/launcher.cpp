@@ -31,10 +31,12 @@ using namespace libsc;
 using namespace libsc::k60;
 using namespace libutil;
 
-#define NORMAL_ID 0
-#define CAR_TEST_ID 1
-#define RUN_TEST_ID 2
-#define COMPETE_ID 3
+#define CAR_TEST_ID 0
+#define RUN_TEST_ID 1
+#define COMPETE_ID 2
+
+#define SINGLE_PID 0
+#define MULTIPLE_PID 1
 
 #define SETPOINT 0
 #define SERVO_KP 1
@@ -85,6 +87,10 @@ void PrintTitleLine(Car *car, LcdTypewriter *writer)
 void Launcher::Run()
 {
 	Car *car = GetSystemRes()->car;
+
+	car->GetBuzzer().SetBeep(true);
+	System::DelayMs(100);
+	car->GetBuzzer().SetBeep(false);
 
 	car->GetServo().SetDegree(SERVO_MID_DEGREE-4000);
 	System::DelayMs(400);
@@ -146,26 +152,19 @@ void Launcher::Run()
 
 					memcpy(image2.get(), car->GetCamera().LockBuffer(), image_size);
 					car->GetCamera().UnlockBuffer();
-					car->GetLcd().SetRegion({0, 90, car->GetCameraW(), car->GetCameraH()});
+					car->GetLcd().SetRegion(Lcd::Rect(0, 80, car->GetCameraW(), car->GetCameraH()));
 					car->GetLcd().FillBits(0, 0xFFFF, image2.get(),
 							car->GetCameraW() * car->GetCameraH());
-//					imageProcess.start(image2.get());
+					imageProcess.start(image2.get());
+
+					car->GetLcd().SetRegion(Lcd::Rect(0, 144, St7735r::GetW(), LcdTypewriter::GetFontH()));
+					writer.SetBgColor(Lcd::kBlack);
+					writer.SetTextColor(Lcd::kWhite);
+					writer.WriteString(String::Format("error:  %f",imageProcess.Analyze()).c_str());
 
 				}
 			};
 			looper.Repeat(25,checkcam,Looper::RepeatMode::kLoose);
-
-			std::function<void(const Timer::TimerInt, const Timer::TimerInt)> printData =
-					[&](const Timer::TimerInt request, const Timer::TimerInt)
-			{
-				car->GetLcd().SetRegion(Lcd::Rect(0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()));
-				writer.SetBgColor(Lcd::kBlack);
-				writer.SetTextColor(Lcd::kWhite);
-//				writer.WriteString(String::Format("error:  %f",imageProcess.Analyze()).c_str());
-
-				looper.RunAfter(request, printData);
-			};
-			looper.RunAfter(11, printData);
 
 			int position_offset = 0;
 			Joystick::Config js_config;
@@ -206,11 +205,116 @@ void Launcher::Run()
 			}
 			car->SetJoystickIsr(nullptr);
 			car->SetButtonIsr(0, nullptr);
+
+			menu.GetSelectedId();
+
 		}
-		setParam(run_app_id);
-//		StartApp(run_app_id);
+		if (run_app_id == CAR_TEST_ID)
+		{
+			StartApp(run_app_id);
+		}
+		else
+		{
+			setPID(run_app_id);
+		}
+
 	}
 	car->GetCamera().Stop();
+}
+
+void Launcher::setPID(const int id){
+
+	Car *car = GetSystemRes()->car;
+
+	while (true)
+	{
+
+		// Pop stack to save resources
+		{
+
+			Looper looper;
+			std::function<void(const Timer::TimerInt, const Timer::TimerInt)> blink =
+					[&](const Timer::TimerInt request, const Timer::TimerInt)
+			{
+				car->GetLed(0).Switch();
+				looper.RunAfter(request, blink);
+			};
+			looper.RunAfter(200, blink);
+
+			LcdTypewriter::Config writer_conf;
+			writer_conf.lcd = &car->GetLcd();
+			LcdTypewriter writer(writer_conf);
+			std::function<void(const Timer::TimerInt, const Timer::TimerInt)> battery =
+					[&](const Timer::TimerInt request, const Timer::TimerInt)
+			{
+				PrintTitleLine(car, &writer);
+				looper.RunAfter(request, battery);
+			};
+			looper.RunAfter(250, battery);
+
+			car->GetLcd().Clear(0);
+
+			car->GetLcd().SetRegion({0, LcdTypewriter::GetFontH(), St7735r::GetW(),
+				St7735r::GetH() - LcdTypewriter::GetFontH()});
+			LcdMenu menu(&car->GetLcd());
+			menu.AddItem(SINGLE_PID, "Single PID");
+			menu.AddItem(MULTIPLE_PID, "Multiple PID");
+			menu.Select(0);
+
+			int position_offset = 0;
+			Joystick::Config js_config;
+			js_config.listeners[static_cast<int>(Joystick::State::kDown)] =
+					[&](const uint8_t)
+			{
+				position_offset = 1;
+			};
+			js_config.listener_triggers[static_cast<int>(Joystick::State::kDown)] =
+					Joystick::Config::Trigger::kDown;
+
+			js_config.listeners[static_cast<int>(Joystick::State::kUp)] =
+					[&](const uint8_t)
+			{
+				position_offset = -1;
+			};
+			js_config.listener_triggers[static_cast<int>(Joystick::State::kUp)] =
+					Joystick::Config::Trigger::kDown;
+			car->SetJoystickIsr(&js_config);
+
+			Button::Config ok_btn_config;
+			ok_btn_config.listener = [&](const uint8_t)
+			{
+				if(menu.GetSelectedId()==SINGLE_PID)
+				{
+					multiple_PID = false;
+				}
+				else if(menu.GetSelectedId()==MULTIPLE_PID)
+				{
+					multiple_PID = true;
+				}
+				looper.Break();
+			};
+			ok_btn_config.listener_trigger = Button::Config::Trigger::kDown;
+			car->SetButtonIsr(0, &ok_btn_config);
+
+			looper.ResetTiming();
+			while (!looper.IsBreak())
+			{
+				if (position_offset)
+				{
+					menu.Select(menu.GetSelectedPosition() + position_offset);
+					position_offset = 0;
+				}
+				looper.Once();
+			}
+			car->SetJoystickIsr(nullptr);
+			car->SetButtonIsr(0, nullptr);
+
+			menu.GetSelectedId();
+
+		}
+		setParam(id);
+	}
+
 }
 
 void Launcher::setParam(const int id){
@@ -220,10 +324,6 @@ void Launcher::setParam(const int id){
 	bool editing=false;
 
 	bool motor_run = false;
-
-#ifdef CAR_WITH_BT
-	scstudio.SetUart(&car->GetUart());
-#endif
 
 	//Input setpoint, servo - kp, ki, kd
 	// Pop stack to save resources
@@ -256,10 +356,18 @@ void Launcher::setParam(const int id){
 		menu.AddItem(SETPOINT, "SETPOINT");
 		menu.AddItem(SERVO_KP, "SERVO KP");
 		menu.AddItem(SERVO_KD, "SERVO KD");
-		menu.AddItem(STRAIGHT_KP, "STRAIGHT KP");
-		menu.AddItem(STRAIGHT_KD, "STRAIGHT KD");
+		if(multiple_PID)
+		{
+			menu.AddItem(STRAIGHT_KP, "STRAIGHT KP");
+			menu.AddItem(STRAIGHT_KD, "STRAIGHT KD");
+		}
 		menu.AddItem(START_APP,"START");
 		menu.Select(0);
+
+		car->GetLcd().SetRegion(Lcd::Rect(0, 144, St7735r::GetW(), LcdTypewriter::GetFontH()));
+		writer.SetBgColor(Lcd::kWhite);
+		writer.SetTextColor(Lcd::kPurple);
+		writer.WriteString(" ");
 
 		std::function<void(const Timer::TimerInt, const Timer::TimerInt)> motor =
 				[&](const Timer::TimerInt, const Timer::TimerInt)
@@ -273,23 +381,6 @@ void Launcher::setParam(const int id){
 				car->SetMotorPower(0,(int16_t)l_speedControl.updatePID((float)car->GetEncoderCount(0)));
 				car->SetMotorPower(1,(int16_t)r_speedControl.updatePID((float)car->GetEncoderCount(1)));
 
-				ScStudio::GraphPack pack(11);
-
-				pack.Pack(0, data[0]);
-				pack.PackF(1, l_speedControl.returnKpresult());
-				pack.PackF(2, l_speedControl.returnKiresult());
-				pack.PackF(3, l_speedControl.returnKdresult());
-				pack.Pack(4, car->GetMotor(0).GetPower());
-				pack.PackF(5, (float)car->GetEncoderCount(0));
-
-				pack.PackF(6, r_speedControl.returnKpresult());
-				pack.PackF(7, r_speedControl.returnKiresult());
-				pack.PackF(8, r_speedControl.returnKdresult());
-				pack.Pack(9, car->GetMotor(1).GetPower());
-				pack.PackF(10, (float)car->GetEncoderCount(1));
-
-				scstudio.SendGraph(pack);
-
 			}
 
 			else {
@@ -299,23 +390,6 @@ void Launcher::setParam(const int id){
 
 		};
 		looper.Repeat(11, motor, Looper::RepeatMode::kPrecise);
-
-//		std::function<void(const Timer::TimerInt, const Timer::TimerInt)> printData =
-//				[&](const Timer::TimerInt request, const Timer::TimerInt)
-//		{
-//			car->GetLcd().SetRegion(Lcd::Rect(0, 128, St7735r::GetW(), LcdTypewriter::GetFontH()));
-//			writer.SetBgColor(Lcd::kWhite);
-//			writer.SetTextColor(Lcd::kPurple);
-//			if(editing){
-//				writer.WriteString(String::Format("%f",data[menu.GetSelectedId()]).c_str());
-//			}
-//
-//			else{
-//				writer.WriteString(" ");
-//			}
-//			looper.RunAfter(request, printData);
-//		};
-//		looper.RunAfter(30, printData);
 
 		int position_offset = 0;
 		Joystick::Config js_config;
@@ -350,6 +424,12 @@ void Launcher::setParam(const int id){
 					break;
 
 				}
+
+				car->GetLcd().SetRegion(Lcd::Rect(0, 144, St7735r::GetW(), LcdTypewriter::GetFontH()));
+				writer.SetBgColor(Lcd::kWhite);
+				writer.SetTextColor(Lcd::kPurple);
+				writer.WriteString(String::Format("%f",data[menu.GetSelectedId()]).c_str());
+
 			}
 			else{
 				position_offset = 1;
@@ -388,6 +468,10 @@ void Launcher::setParam(const int id){
 					break;
 
 				}
+				car->GetLcd().SetRegion(Lcd::Rect(0, 144, St7735r::GetW(), LcdTypewriter::GetFontH()));
+				writer.SetBgColor(Lcd::kWhite);
+				writer.SetTextColor(Lcd::kPurple);
+				writer.WriteString(String::Format("%f",data[menu.GetSelectedId()]).c_str());
 			}
 			else{
 				position_offset = -1;
@@ -409,6 +493,11 @@ void Launcher::setParam(const int id){
 
 				editing = false;
 				motor_run = false;
+
+				car->GetLcd().SetRegion(Lcd::Rect(0, 144, St7735r::GetW(), LcdTypewriter::GetFontH()));
+				writer.SetBgColor(Lcd::kWhite);
+				writer.SetTextColor(Lcd::kPurple);
+				writer.WriteString(" ");
 
 			}
 			else{
@@ -432,6 +521,11 @@ void Launcher::setParam(const int id){
 					editing = true;
 					break;
 				}
+
+				car->GetLcd().SetRegion(Lcd::Rect(0, 144, St7735r::GetW(), LcdTypewriter::GetFontH()));
+				writer.SetBgColor(Lcd::kWhite);
+				writer.SetTextColor(Lcd::kPurple);
+				writer.WriteString(String::Format("%f",data[menu.GetSelectedId()]).c_str());
 			}
 
 		};
@@ -473,8 +567,6 @@ void Launcher::StartApp(const int id)
 
 	switch (id)
 	{
-	case NORMAL_ID:
-		break;
 
 	case CAR_TEST_ID:
 	{
@@ -485,6 +577,12 @@ void Launcher::StartApp(const int id)
 
 	case RUN_TEST_ID:
 	{
+
+		if(!multiple_PID)
+		{
+			data[3] = data[1];
+			data[4] = data[2];
+		}
 
 		RunTestApp app(GetSystemRes(),data[0],data[1],0.0f,data[2],data[3],data[4]);
 
@@ -509,6 +607,13 @@ void Launcher::StartApp(const int id)
 
 	case COMPETE_ID:
 	{
+
+		if(!multiple_PID)
+		{
+			data[3] = data[1];
+			data[4] = data[2];
+		}
+
 		SCStudioTestApp app(GetSystemRes(),data[0],data[1],0.0f,data[2],data[3],data[4]);
 
 		float adc_result = car->GetAdc().GetResultF();

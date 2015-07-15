@@ -10,6 +10,7 @@
 
 #include "app.h"
 #include "Imp.h"
+#include "ImageProcess.h"
 
 namespace camera
 {
@@ -18,12 +19,14 @@ class CarTestApp : public App
 {
 public:
 	explicit CarTestApp(SystemRes *res)
-			: App(res)
+			: App(res),
+			  imageProcess(GetSystemRes()->car)
 	{}
 
 	void Run() override;
 
 	Imp mf;
+	ImageProcess imageProcess;
 
 };
 

@@ -221,6 +221,15 @@ void SCStudioTestApp::Run()
 		float error = imageProcess.Analyze();
 		//imageProcess.printResult();
 
+		if(imageProcess.getState() == BLACK_GUIDE)
+		{
+			car->GetBuzzer().SetBeep(true);
+		}
+		else
+		{
+			car->GetBuzzer().SetBeep(false);
+		}
+
 		show_error = error;
 
 		//set angle with servo PID controller and image process result

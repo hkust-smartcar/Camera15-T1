@@ -32,17 +32,19 @@ public:
 			  r_ki(0.0f),
 			  r_kd(0.00055f),
 
+			  multiple_PID(false),
+
 			  l_speedControl(&l_m_setpoint, &l_kp, &l_ki, &l_kd,0,0,0, 0, 950),
-			  r_speedControl(&r_m_setpoint, &r_kp, &r_ki, &r_kd,0,0,0, 0, 950)
-//			  imageProcess(GetSystemRes()->car)
+			  r_speedControl(&r_m_setpoint, &r_kp, &r_ki, &r_kd,0,0,0, 0, 950),
+			  imageProcess(GetSystemRes()->car)
 
 	{
 			data[0] = 1350.0f;
-			data[1] = 0.475f;
-			data[2] = 0.0455f;
+			data[1] = 0.46f;
+			data[2] = 0.04f;
 
-			data[3] = 0.35f;
-			data[4] = 0.068f;
+			data[3] = 0.4f;
+			data[4] = 0.06f;
 
 			l_m_setpoint = data[0];
 			r_m_setpoint = data[0];
@@ -54,6 +56,8 @@ public:
 private:
 	void StartApp(const int id);
 	void setParam(const int id);
+	void setPID(const int id);
+
 	float data[5];
 
 	float l_m_setpoint;
@@ -67,11 +71,12 @@ private:
 	float r_ki;
 	float r_kd;
 
+	bool multiple_PID;
+
 	PIDhandler l_speedControl;
 	PIDhandler r_speedControl;
 
-	libutil::ScStudio scstudio;
-//	ImageProcess  imageProcess;
+	ImageProcess  imageProcess;
 };
 
 }
